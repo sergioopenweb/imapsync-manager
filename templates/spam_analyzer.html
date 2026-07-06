@@ -118,11 +118,38 @@
                         Formatos aceitos:
                         <code>email@dominio.com</code> (exato) &nbsp;·&nbsp;
                         <code>@dominio.com</code> (domínio inteiro) &nbsp;·&nbsp;
-                        <code>usuario@</code> (usuário exato) &nbsp;·&nbsp;
-                        <code>usuario*@</code> (usuário começa com) &nbsp;·&nbsp;
+                        <code>usuario@</code> (usuário exato em <strong>qualquer</strong> domínio — perigoso; desativado por defeito) &nbsp;·&nbsp;
+                        <code>usuario*@</code> (usuário começa com — perigoso; desativado por defeito) &nbsp;·&nbsp;
                         <code>*.dominio.com.br</code> (subdomínios) &nbsp;·&nbsp;
                         <code>Nome</code> (nome de exibição, contém).
                         Marcar um email como spam na lista de sincronizados adiciona o remetente aqui automaticamente.
+                        <strong class="text-warning">Evite <code>noreply@</code>, <code>contato@</code>, <code>support@</code></strong> —
+                        bloqueiam legítimos em qualquer domínio. Use <code>@spam.com</code> ou <code>evil@dominio.com</code>.
+                    </div>
+                </div>
+                <div class="col-12">
+                    <p class="small fw-semibold mb-1">Regras <code>prefixo@</code> (<code>contato@</code>, <code>noreply@</code>…)</p>
+                    {% set bp_val = spam_config.get('bloqueio_prefixo_estrito') if spam_config else none %}
+                    <div class="alert alert-warning py-2 small mb-2">
+                        Por defeito, entradas como <code>contato@</code> e <code>contato*@</code> são <strong>ignoradas</strong> na sincronização.
+                        Só ative o modo estrito se aceitar bloquear <em>todos</em> os emails com aquele usuário local.
+                    </div>
+                    <div class="d-flex flex-column gap-1">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="bloqueio_prefixo_estrito" value="herdar"
+                                   id="bloqueio_prefixo_herdar" {{ 'checked' if bp_val is none else '' }}>
+                            <label class="form-check-label small" for="bloqueio_prefixo_herdar">Herdar (global — padrão: desativado)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="bloqueio_prefixo_estrito" value="0"
+                                   id="bloqueio_prefixo_desativado" {{ 'checked' if bp_val is not none and not bp_val else '' }}>
+                            <label class="form-check-label small" for="bloqueio_prefixo_desativado">Desativado — ignorar <code>prefixo@</code> (recomendado)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="bloqueio_prefixo_estrito" value="1"
+                                   id="bloqueio_prefixo_estrito" {{ 'checked' if bp_val is not none and bp_val else '' }}>
+                            <label class="form-check-label small text-danger" for="bloqueio_prefixo_estrito">Estrito — <code>prefixo@</code> bloqueia em qualquer domínio</label>
+                        </div>
                     </div>
                 </div>
                 <div class="col-12">
@@ -279,6 +306,59 @@
         </p>
     </div>
 </div>
+
+{% if spam_stats %}
+<div class="card mb-4 border-info">
+    <div class="card-header bg-info bg-opacity-10">
+        <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Estatísticas de spam (últimos {{ spam_stats.dias or 30 }} dias)</h5>
+    </div>
+    <div class="card-body">
+        <p class="small text-muted mb-3">
+            Detectados automaticamente: <strong>{{ spam_stats.total_detectado or 0 }}</strong> —
+            Marcados manualmente sem detecção: <strong>{{ spam_stats.total_manual or 0 }}</strong>
+        </p>
+        {% if spam_stats.por_motivo %}
+        <h6 class="small fw-semibold">Por motivo</h6>
+        <table class="table table-sm table-striped mb-3">
+            <thead><tr><th>Motivo</th><th class="text-end">Qtd</th></tr></thead>
+            <tbody>
+                {% for row in spam_stats.por_motivo %}
+                <tr>
+                    <td><code>{{ row.motivo or 'desconhecido' }}</code></td>
+                    <td class="text-end">{{ row.n }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+        {% if spam_stats.top_detalhes %}
+        <h6 class="small fw-semibold">Regras / detalhes que mais dispararam</h6>
+        <table class="table table-sm mb-3">
+            <thead><tr><th>Motivo</th><th>Detalhe</th><th class="text-end">Qtd</th></tr></thead>
+            <tbody>
+                {% for row in spam_stats.top_detalhes %}
+                <tr>
+                    <td><code>{{ row.motivo or '-' }}</code></td>
+                    <td class="small text-break">{{ (row.detalhe or '-')[:80] }}</td>
+                    <td class="text-end">{{ row.n }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+        {% if spam_stats.manual_sem_auto %}
+        <h6 class="small fw-semibold">Marcados como spam manualmente (filtro não detectou)</h6>
+        <ul class="small mb-0">
+            {% for row in spam_stats.manual_sem_auto %}
+            <li>{{ row.sincronizado_em.strftime('%d/%m/%Y') if row.sincronizado_em else '' }} — {{ row.remetente[:50] }} — {{ (row.assunto or '')[:60] }}</li>
+            {% endfor %}
+        </ul>
+        {% elif not spam_stats.por_motivo %}
+        <p class="text-muted small mb-0">Nenhuma detecção de spam no período.</p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
 
 <div class="mb-3">
     <a href="{{ url_for('detalhes_conta_principal', id=conta.id) }}" class="btn btn-secondary">

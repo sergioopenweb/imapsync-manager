@@ -720,8 +720,8 @@ class EmailHistoryManager:
     @staticmethod
     def get_remetentes_emails_conhecidos(conta_origem_id):
         """
-        E-mails de remetentes que já apareceram no histórico de sincronização desta conta.
-        Usado para pular Spam Analyzer e filtros em mensagens novas do mesmo remetente.
+        E-mails de remetentes legítimos já vistos nesta conta (nunca marcados/detectados como spam).
+        Usado para pular Spam Analyzer em mensagens novas do mesmo remetente confiável.
         """
         try:
             from spam_analyzer_config import _extrair_email_remetente
@@ -732,6 +732,8 @@ class EmailHistoryManager:
                     WHERE conta_origem_id = %s
                       AND remetente IS NOT NULL
                       AND remetente != ''
+                      AND marcado_spam = 0
+                      AND (detectado_spam_pelo_filtro = 0 OR detectado_spam_pelo_filtro IS NULL)
                 ''', (conta_origem_id,))
                 emails = set()
                 for row in cursor.fetchall():

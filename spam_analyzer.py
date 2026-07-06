@@ -129,10 +129,15 @@ def is_spam(raw_email_bytes: bytes, config: dict = None) -> bool:
 
         analyzer, result = asyncio.run(_analyze_coro(tmp_path, wordlist=wordlist, model_path=model_path))
         if result is None:
+            logger.debug("Spam Analyzer: analyze retornou None")
             return False
+        is_spam_result = False
         if analyzer is not None and hasattr(analyzer, 'is_spam'):
-            return bool(analyzer.is_spam(result))
-        return bool(getattr(result, 'is_spam', lambda: False)())
+            is_spam_result = bool(analyzer.is_spam(result))
+        else:
+            is_spam_result = bool(getattr(result, 'is_spam', lambda: False)())
+        logger.debug(f"Spam Analyzer: is_spam={is_spam_result}")
+        return is_spam_result
     except Exception as e:
         logger.warning(f"Erro ao analisar spam: {e}")
         return False

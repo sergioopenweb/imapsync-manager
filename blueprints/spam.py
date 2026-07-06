@@ -29,10 +29,11 @@ def register_routes(app):
             spam_analyzer_disponivel = False
             palavras_genericas = []
             global_cfg = {}
+            spam_stats = {}
             try:
                 from spam_analyzer_config import (
                     criar_tabela_se_nao_existe, get_config, get_palavras_genericas,
-                    aplicar_defaults, get_config_global,
+                    aplicar_defaults, get_config_global, get_estatisticas_spam_conta_principal,
                 )
                 from spam_analyzer import is_available as spam_analyzer_is_available
                 criar_tabela_se_nao_existe()
@@ -40,6 +41,7 @@ def register_routes(app):
                 spam_analyzer_disponivel = spam_analyzer_is_available()
                 palavras_genericas = get_palavras_genericas()
                 global_cfg = get_config_global()
+                spam_stats = get_estatisticas_spam_conta_principal(conta_principal_id, dias=30)
             except Exception:
                 pass
 
@@ -50,6 +52,7 @@ def register_routes(app):
                 spam_analyzer_disponivel=spam_analyzer_disponivel,
                 palavras_genericas=palavras_genericas,
                 global_cfg=global_cfg,
+                spam_stats=spam_stats,
             )
         except Exception as e:
             logger.error(f"Erro ao abrir Spam Analyzer: {e}")
@@ -85,6 +88,8 @@ def register_routes(app):
                     return None
                 return val == '1'
 
+            bloqueio_prefixo = _parse_h('bloqueio_prefixo_estrito')
+
             if acao not in (ACAO_MARCAR_SPAM, ACAO_PULAR_INBOX):
                 acao = ACAO_MARCAR_SPAM
 
@@ -95,6 +100,7 @@ def register_routes(app):
                 heuristica_dominio_numerico=_parse_h('heuristica_dominio_numerico'),
                 heuristica_reply_to=_parse_h('heuristica_reply_to'),
                 heuristica_display_name=_parse_h('heuristica_display_name'),
+                bloqueio_prefixo_estrito=bloqueio_prefixo,
             ):
                 flash('Configuração do Spam Analyzer salva.', 'success')
             else:

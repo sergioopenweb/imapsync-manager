@@ -1355,7 +1355,14 @@ def copy_folder(
                     else:
                         # 1) Remetentes bloqueados: suporta email exato, @dominio.com e nome de exibição
                         blocked = [l.strip() for l in (spam_config.get('remetentes_bloqueados') or '').splitlines() if l.strip()]
-                        entrada_bloqueada = remetente_bloqueado_entrada(from_addr, blocked)
+                        dominios_spam = [l.strip().lower() for l in (spam_config.get('dominios_gratuitos') or '').splitlines() if l.strip()]
+                        palavras_spam = [l.strip().lower() for l in (spam_config.get('palavras_institucionais') or '').splitlines() if l.strip()]
+                        prefixo_estrito = bool(spam_config.get('bloqueio_prefixo_estrito'))
+                        entrada_bloqueada = remetente_bloqueado_entrada(
+                            from_addr,
+                            blocked,
+                            prefixo_estrito=prefixo_estrito,
+                        )
                         if entrada_bloqueada:
                             _aplicar_acao_spam()
                             detectado_spam_pelo_filtro = True
@@ -1371,7 +1378,12 @@ def copy_folder(
                             if not detectado_spam_pelo_filtro and spam_config.get('heuristica_reply_to', True):
                                 from spam_analyzer_config import reply_to_mismatch
                                 reply_to_raw = decode_header_value(parsed_msg.get('Reply-To', ''))
-                                if reply_to_mismatch(from_addr, reply_to_raw):
+                                if reply_to_mismatch(
+                                    from_addr,
+                                    reply_to_raw,
+                                    remetentes_permitidos=allowed,
+                                    dominios_gratuitos=dominios_spam,
+                                ):
                                     _aplicar_acao_spam()
                                     detectado_spam_pelo_filtro = True
                                     detectado_spam_motivo = 'reply_to'

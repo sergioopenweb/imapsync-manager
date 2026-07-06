@@ -24,6 +24,11 @@ MIN_TAMANHO_PALAVRA = 4
 # Prefixo guardado no histórico para remover o remetente ao desmarcar
 PREFIXO_REMETENTE_GUARDADO = 'REMETENTE:'
 
+# Remetentes de sistema — não aplicar heurísticas de domínio numérico / Reply-To
+_REMETENTES_SISTEMA = frozenset({
+    'mailer-daemon', 'mail-daemon', 'postmaster', 'noreply', 'no-reply',
+})
+
 # Ações disponíveis
 ACAO_MARCAR_SPAM = 'mark_spam'      # Enviar para pasta Spam no destino
 ACAO_PULAR_INBOX = 'skip_inbox'     # Arquivar (não colocar na caixa de entrada)
@@ -214,6 +219,7 @@ def criar_tabela_se_nao_existe():
             _ensure_heuristica_dominio_numerico_column(cursor)
             _ensure_heuristica_reply_to_column(cursor)
             _ensure_heuristica_display_name_column(cursor)
+            _ensure_bloqueio_prefixo_estrito_column(cursor)
             _ensure_mediumtext_columns(cursor)
             logger.info("Tabela config_spam_analyzer verificada/criada")
     except Exception as e:
@@ -320,6 +326,33 @@ def _ensure_heuristica_display_name_column(cursor):
             logger.warning(f"Coluna heuristica_display_name: {e}")
 
 
+def _ensure_bloqueio_prefixo_estrito_column(cursor):
+    """NULL = herdar do global; 1 = prefixo@ bloqueia qualquer domínio; 0 = exige sinal extra."""
+    try:
+        cursor.execute(
+            'ALTER TABLE config_spam_analyzer ADD COLUMN bloqueio_prefixo_estrito TINYINT(1) DEFAULT NULL'
+        )
+        logger.info("Coluna bloqueio_prefixo_estrito adicionada à config_spam_analyzer")
+    except Exception as e:
+        if '1060' in str(e) or 'duplicate column' in str(e).lower():
+            pass
+        else:
+            logger.warning(f"Coluna bloqueio_prefixo_estrito: {e}")
+
+
+def _ensure_bloqueio_prefixo_estrito_global(cursor):
+    try:
+        cursor.execute(
+            'ALTER TABLE config_spam_global ADD COLUMN bloqueio_prefixo_estrito TINYINT(1) NOT NULL DEFAULT 0'
+        )
+        logger.info("Coluna bloqueio_prefixo_estrito adicionada à config_spam_global")
+    except Exception as e:
+        if '1060' in str(e) or 'duplicate column' in str(e).lower():
+            pass
+        else:
+            logger.warning(f"Coluna bloqueio_prefixo_estrito (global): {e}")
+
+
 def _ensure_mediumtext_columns(cursor):
     """Migra colunas TEXT para MEDIUMTEXT para suportar listas grandes."""
     for col in ('wordlist_extra', 'remetentes_bloqueados', 'remetentes_permitidos',
@@ -367,7 +400,8 @@ def get_config(conta_principal_id: int) -> Optional[Dict[str, Any]]:
                        dominios_gratuitos, palavras_institucionais,
                        heuristica_dominio_numerico,
                        heuristica_reply_to,
-                       heuristica_display_name
+                       heuristica_display_name,
+                       bloqueio_prefixo_estrito
                 FROM config_spam_analyzer
                 WHERE conta_principal_id = %s
             ''', (conta_principal_id,))
@@ -388,6 +422,7 @@ def get_config(conta_principal_id: int) -> Optional[Dict[str, Any]]:
                     'heuristica_dominio_numerico': row.get('heuristica_dominio_numerico'),
                     'heuristica_reply_to': row.get('heuristica_reply_to'),
                     'heuristica_display_name': row.get('heuristica_display_name'),
+                    'bloqueio_prefixo_estrito': row.get('bloqueio_prefixo_estrito'),
                 }
             return None
     except Exception as e:
@@ -415,6 +450,7 @@ def aplicar_defaults(cfg: Optional[Dict[str, Any]]) -> Dict[str, Any]:
             'heuristica_dominio_numerico': None,
             'heuristica_reply_to': None,
             'heuristica_display_name': None,
+            'bloqueio_prefixo_estrito': None,
         }
     return cfg
 
@@ -451,12 +487,42 @@ def _normalizar_acentos(texto: str) -> str:
     return unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('ASCII')
 
 
-def remetente_bloqueado_entrada(remetente_raw: Optional[str], lista_bloqueados: List[str]) -> Optional[str]:
+def _is_remetente_sistema(email: Optional[str]) -> bool:
+    """True para MAILER-DAEMON, postmaster e equivalentes."""
+    if not email or '@' not in email:
+        return False
+    local = email.split('@', 1)[0].lower()
+    return local in _REMETENTES_SISTEMA or local.startswith('mailer-daemon')
+
+
+def _dominio_base_registravel(domain: str) -> str:
+    """Agrupa subdomínios sob o domínio registrável (ex.: mail.empresa.com.br → empresa.com.br)."""
+    domain = (domain or '').lower().strip().strip('.')
+    if not domain:
+        return ''
+    parts = domain.split('.')
+    if len(parts) >= 3 and len(parts[-2]) <= 4 and len(parts[-1]) <= 3:
+        return '.'.join(parts[-3:])
+    if len(parts) >= 2:
+        return '.'.join(parts[-2:])
+    return domain
+
+
+def remetente_bloqueado_entrada(
+    remetente_raw: Optional[str],
+    lista_bloqueados: List[str],
+    *,
+    prefixo_estrito: bool = False,
+) -> Optional[str]:
     """
     Verifica se o remetente está na lista de bloqueados.
     Retorna a entrada que correspondeu (ex: '@spam.com', 'user@evil.com', 'Nome Suspeito')
     ou None se não bloqueado.
     Mesmos formatos suportados que remetente_bloqueado().
+
+    Regras prefixo@ (ex.: contato@, noreply@): só aplicadas com bloqueio_prefixo_estrito=True.
+    Por defeito são ignoradas — bloqueiam qualquer domínio e geram muitos falsos positivos.
+    Prefira @dominio.com ou email@dominio.com exato.
     """
     if not remetente_raw or not lista_bloqueados:
         return None
@@ -482,10 +548,14 @@ def remetente_bloqueado_entrada(remetente_raw: Optional[str], lista_bloqueados: 
             if from_domain_bare and from_domain_bare.endswith(sufixo):
                 return entrada_orig
         elif '*@' in entrada:
+            if not prefixo_estrito:
+                continue
             prefixo = entrada.split('*@')[0]
             if from_user and from_user.startswith(prefixo):
                 return entrada_orig
         elif entrada.endswith('@'):
+            if not prefixo_estrito:
+                continue
             prefixo = entrada[:-1]
             if from_user and from_user == prefixo:
                 return entrada_orig
@@ -535,9 +605,8 @@ def remetente_bloqueado(remetente_raw: Optional[str], lista_bloqueados: List[str
     Formatos suportados (case-insensitive, ignora acentos no display name):
       - email@dominio.com   → email exato
       - @dominio.com        → qualquer email do domínio
-      - prefixo@            → usuário exato: docusing@ bloqueia docusing@qualquer.dominio
-      - prefixo*@           → usuário começa com prefixo: dinhnaogosto*@ bloqueia
-                              dinhnaogosto_mingmei-2ha@xerionz.com, dinhnaogosto_nayma@etc.com
+      - prefixo@            → só com bloqueio estrito ativo; caso contrário ignorado
+      - prefixo*@         → só com bloqueio estrito; caso contrário ignorado
       - *.dominio.com       → qualquer email cujo domínio termina com ".dominio.com"
       - Texto sem @ ou *    → bloqueia pelo nome de exibição (display name) — contém
     """
@@ -566,14 +635,11 @@ def remetente_bloqueado(remetente_raw: Optional[str], lista_bloqueados: List[str
                 return True
 
         elif '*@' in entrada:
-            prefixo = entrada.split('*@')[0]
-            if from_user and from_user.startswith(prefixo):
-                return True
+            continue
 
         elif entrada.endswith('@'):
-            prefixo = entrada[:-1]
-            if from_user and from_user == prefixo:
-                return True
+            # Sem modo estrito na sync; aqui também ignoramos prefixo@ por segurança
+            continue
 
         elif '@' in entrada:
             if from_email and from_email == entrada:
@@ -1086,11 +1152,15 @@ def remover_remetente_do_filtro_spam(historico_id: int, conta_origem_id: int, us
         return False
 
 
-def reply_to_mismatch(from_raw: str, reply_to_raw: str) -> bool:
+def reply_to_mismatch(
+    from_raw: str,
+    reply_to_raw: str,
+    remetentes_permitidos: Optional[List[str]] = None,
+    dominios_gratuitos: Optional[List[str]] = None,
+) -> bool:
     """
-    Retorna True se Reply-To e From pertencem a domínios diferentes.
-    Padrão clássico de phishing: remetente parece legítimo mas respostas
-    vão para outro domínio controlado pelo atacante.
+    True se Reply-To e From têm domínios diferentes E o From é suspeito.
+    Ignora remetentes de sistema, whitelist e mesmo domínio registrável.
     """
     if not reply_to_raw or not reply_to_raw.strip():
         return False
@@ -1098,9 +1168,30 @@ def reply_to_mismatch(from_raw: str, reply_to_raw: str) -> bool:
     reply_to_email = _extrair_email_remetente(reply_to_raw)
     if not from_email or not reply_to_email:
         return False
+    if _is_remetente_sistema(from_email):
+        return False
+    if remetentes_permitidos:
+        if remetente_permitido(from_raw, remetentes_permitidos):
+            return False
+        if remetente_permitido(reply_to_raw, remetentes_permitidos):
+            return False
     from_domain = from_email.split('@')[1].lower()
     reply_to_domain = reply_to_email.split('@')[1].lower()
-    return from_domain != reply_to_domain
+    if from_domain == reply_to_domain:
+        return False
+    if _dominio_base_registravel(from_domain) == _dominio_base_registravel(reply_to_domain):
+        return False
+    from_suspeito = dominio_numerico_suspeito(from_raw)
+    if dominios_gratuitos:
+        doms = {d.strip().lower() for d in dominios_gratuitos if d and d.strip()}
+        if from_domain in doms:
+            from_suspeito = True
+        elif reply_to_domain in doms:
+            # Reply-To em provedor gratuito com From de outro domínio — phishing comum
+            from_suspeito = True
+    if not from_suspeito:
+        return False
+    return True
 
 
 def display_name_spoofing(from_raw: str, dominios_gratuitos: List[str], palavras_institucionais: List[str]) -> bool:
@@ -1160,6 +1251,9 @@ def dominio_numerico_suspeito(from_raw: str) -> bool:
     """
     email = _extrair_email_remetente(from_raw)
     if not email or '@' not in email:
+        return False
+
+    if _is_remetente_sistema(email):
         return False
 
     local, domain = email.split('@', 1)
@@ -1228,6 +1322,7 @@ def salvar_config(
     heuristica_dominio_numerico: Optional[bool] = None,
     heuristica_reply_to: Optional[bool] = None,
     heuristica_display_name: Optional[bool] = None,
+    bloqueio_prefixo_estrito: Optional[bool] = None,
 ) -> bool:
     """
     Salva ou atualiza a configuração do Spam Analyzer por conta.
@@ -1253,8 +1348,8 @@ def salvar_config(
                 INSERT INTO config_spam_analyzer (conta_principal_id, ativo, acao, wordlist_extra, model_path,
                     remetentes_bloqueados, remetentes_permitidos, pasta_spam, dominios_gratuitos,
                     palavras_institucionais, heuristica_dominio_numerico,
-                    heuristica_reply_to, heuristica_display_name)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    heuristica_reply_to, heuristica_display_name, bloqueio_prefixo_estrito)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON DUPLICATE KEY UPDATE
                     ativo = VALUES(ativo),
                     acao = VALUES(acao),
@@ -1267,7 +1362,8 @@ def salvar_config(
                     palavras_institucionais = VALUES(palavras_institucionais),
                     heuristica_dominio_numerico = VALUES(heuristica_dominio_numerico),
                     heuristica_reply_to = VALUES(heuristica_reply_to),
-                    heuristica_display_name = VALUES(heuristica_display_name)
+                    heuristica_display_name = VALUES(heuristica_display_name),
+                    bloqueio_prefixo_estrito = VALUES(bloqueio_prefixo_estrito)
             ''', (
                 conta_principal_id, bool(ativo), acao, wordlist_extra, model_path,
                 remetentes_bloqueados, remetentes_permitidos, pasta_spam, dominios_gratuitos,
@@ -1275,6 +1371,7 @@ def salvar_config(
                 None if heuristica_dominio_numerico is None else int(heuristica_dominio_numerico),
                 None if heuristica_reply_to is None else int(heuristica_reply_to),
                 None if heuristica_display_name is None else int(heuristica_display_name),
+                None if bloqueio_prefixo_estrito is None else int(bloqueio_prefixo_estrito),
             ))
             logger.info(f"Config Spam Analyzer salva: conta_principal_id={conta_principal_id} ativo={ativo} acao={acao}")
             return True
@@ -1315,6 +1412,7 @@ def _criar_tabela_config_spam_global():
             cursor.execute('''
                 INSERT IGNORE INTO config_spam_global (id) VALUES (1)
             ''')
+            _ensure_bloqueio_prefixo_estrito_global(cursor)
             logger.info("Tabela config_spam_global verificada/criada")
     except Exception as e:
         logger.error(f"Erro ao criar tabela config_spam_global: {e}")
@@ -1343,6 +1441,7 @@ def get_config_global(force_reload: bool = False) -> Dict[str, Any]:
             'heuristica_reply_to': bool(row.get('heuristica_reply_to', True)),
             'heuristica_display_name': bool(row.get('heuristica_display_name', True)),
             'heuristica_dominio_numerico': bool(row.get('heuristica_dominio_numerico', True)),
+            'bloqueio_prefixo_estrito': bool(row.get('bloqueio_prefixo_estrito', False)),
         }
         return _CONFIG_GLOBAL_CACHE
     except Exception as e:
@@ -1359,6 +1458,7 @@ def get_config_global(force_reload: bool = False) -> Dict[str, Any]:
             'heuristica_reply_to': True,
             'heuristica_display_name': True,
             'heuristica_dominio_numerico': True,
+            'bloqueio_prefixo_estrito': False,
         }
 
 
@@ -1701,5 +1801,73 @@ def get_config_merged_para_sync(conta_principal_id: int, usuario_id: Optional[in
         'heuristica_reply_to': _resolve_heuristica('heuristica_reply_to', account_cfg, user_cfg, global_cfg, True),
         'heuristica_display_name': _resolve_heuristica('heuristica_display_name', account_cfg, user_cfg, global_cfg, True),
         'heuristica_dominio_numerico': _resolve_heuristica('heuristica_dominio_numerico', account_cfg, user_cfg, global_cfg, True),
+        'bloqueio_prefixo_estrito': _resolve_heuristica('bloqueio_prefixo_estrito', account_cfg, user_cfg, global_cfg, False),
     }
     return merged
+
+
+def get_estatisticas_spam_conta_principal(conta_principal_id: int, dias: int = 30) -> Dict[str, Any]:
+    """Agrega detecções de spam do histórico para exibição na UI."""
+    vazio = {
+        'por_motivo': [],
+        'top_detalhes': [],
+        'manual_sem_auto': [],
+        'total_detectado': 0,
+        'total_manual': 0,
+    }
+    try:
+        with DatabaseManager.get_cursor() as cursor:
+            cursor.execute('''
+                SELECT h.detectado_spam_motivo AS motivo, COUNT(*) AS n
+                FROM historico_emails_sincronizados h
+                INNER JOIN contas_origem co ON co.id = h.conta_origem_id
+                WHERE co.conta_principal_id = %s
+                  AND h.detectado_spam_pelo_filtro = 1
+                  AND h.sincronizado_em >= DATE_SUB(NOW(), INTERVAL %s DAY)
+                GROUP BY h.detectado_spam_motivo
+                ORDER BY n DESC
+            ''', (conta_principal_id, dias))
+            por_motivo = cursor.fetchall() or []
+
+            cursor.execute('''
+                SELECT h.detectado_spam_motivo AS motivo,
+                       h.detectado_spam_detalhe AS detalhe,
+                       COUNT(*) AS n
+                FROM historico_emails_sincronizados h
+                INNER JOIN contas_origem co ON co.id = h.conta_origem_id
+                WHERE co.conta_principal_id = %s
+                  AND h.detectado_spam_pelo_filtro = 1
+                  AND h.sincronizado_em >= DATE_SUB(NOW(), INTERVAL %s DAY)
+                GROUP BY h.detectado_spam_motivo, h.detectado_spam_detalhe
+                ORDER BY n DESC
+                LIMIT 10
+            ''', (conta_principal_id, dias))
+            top_detalhes = cursor.fetchall() or []
+
+            cursor.execute('''
+                SELECT h.assunto, h.remetente, h.sincronizado_em
+                FROM historico_emails_sincronizados h
+                INNER JOIN contas_origem co ON co.id = h.conta_origem_id
+                WHERE co.conta_principal_id = %s
+                  AND h.marcado_spam = 1
+                  AND (h.detectado_spam_pelo_filtro = 0 OR h.detectado_spam_pelo_filtro IS NULL)
+                  AND h.sincronizado_em >= DATE_SUB(NOW(), INTERVAL %s DAY)
+                ORDER BY h.sincronizado_em DESC
+                LIMIT 15
+            ''', (conta_principal_id, dias))
+            manual_sem_auto = cursor.fetchall() or []
+
+            total_detectado = sum(int(r.get('n') or 0) for r in por_motivo)
+            total_manual = len(manual_sem_auto)
+
+        return {
+            'por_motivo': por_motivo,
+            'top_detalhes': top_detalhes,
+            'manual_sem_auto': manual_sem_auto,
+            'total_detectado': total_detectado,
+            'total_manual': total_manual,
+            'dias': dias,
+        }
+    except Exception as e:
+        logger.warning(f"Erro ao buscar estatísticas de spam: {e}")
+        return vazio
