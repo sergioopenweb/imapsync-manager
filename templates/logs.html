@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Logs - {{ conta.nome }} - ImapSync Manager{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-file-text"></i> Logs de Sincronização
+    </h1>
+    <!-- Status em tempo real -->
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <a href="{{ url_for('mensagens_problematicas', conta_origem_id=conta.id) }}"
+           class="btn btn-sm btn-outline-warning position-relative" title="Mensagens com erro de sync">
+            <i class="bi bi-exclamation-triangle"></i> Mensagens problemáticas
+            {% if erros_ativos > 0 %}
+            <span class="badge bg-danger ms-1">{{ erros_ativos }}</span>
+            {% endif %}
+        </a>
+        <span id="syncStatusBadge" class="badge bg-secondary">
+            <i class="bi bi-circle-fill me-1" id="syncStatusDot"></i>
+            <span id="syncStatusText">Verificando…</span>
+        </span>
+        <button type="button" id="btnPararSync" class="btn btn-danger btn-sm d-none"
+                title="Interrompe a sincronização em andamento">
+            <i class="bi bi-stop-fill"></i> Parar sincronização
+        </button>
+    </div>
+</div>
+
+<div id="syncProgressPanel" class="alert alert-warning d-none mb-3 py-2" role="status">
+    <div class="d-flex align-items-start gap-2">
+        <span class="spinner-border spinner-border-sm mt-1 flex-shrink-0" aria-hidden="true"></span>
+        <div>
+            <strong class="d-block mb-1">Progresso da sincronização</strong>
+            <pre id="syncProgressText" class="mb-0 small" style="white-space: pre-wrap; font-family: inherit;"></pre>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">{{ conta.nome }}</h5>
+    </div>
+    <div class="card-body">
+        <p><strong>Email:</strong> {{ conta.email }}</p>
+        <p><strong>Servidor:</strong> {{ conta.servidor }}:{{ conta.porta }}</p>
+        <p class="mb-0">
+            <strong>Status:</strong>
+            <span class="badge bg-{{ 'success' if conta.ativa else 'secondary' }}">
+                {{ 'Ativa' if conta.ativa else 'Inativa' }}
+            </span>
+        </p>
+    </div>
+</div>
+
+<h3 class="mb-3">Histórico de Sincronizações</h3>
+
+{% if logs %}
+<div class="table-responsive">
+    <table id="logsTable" class="table table-striped" style="width:100%">
+        <thead>
+            <tr>
+                <th>Data/Hora</th>
+                <th>Status</th>
+                <th>Duração</th>
+                <th>Detalhes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td data-order="{{ log.criado_em.isoformat() }}">{{ log.criado_em.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                <td>
+                    {% if log.status == 'sucesso' %}
+                    <span class="badge badge-status-sucesso">
+                        <i class="bi bi-check-circle"></i> Sucesso
+                    </span>
+                    {% elif log.status == 'erro' %}
+                    <span class="badge badge-status-erro">
+                        <i class="bi bi-x-circle"></i> Erro
+                    </span>
+                    {% else %}
+                    <span class="badge badge-status-executando">
+                        <i class="bi bi-arrow-repeat"></i> Executando
+                    </span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if log.finalizado_em %}
+                        {% set duracao = (log.finalizado_em - log.criado_em).total_seconds() %}
+                        {% if duracao < 60 %}{{ duracao|int }} s
+                        {% else %}{{ (duracao / 60)|int }} min{% endif %}
+                    {% else %}
+                    <span class="text-muted">Em andamento…</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if log.mensagem %}
+                    <button class="btn btn-sm btn-outline-info" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#log-{{ log.id }}">
+                        <i class="bi bi-eye"></i> Ver
+                    </button>
+                    <div class="collapse mt-2" id="log-{{ log.id }}">
+                        <div class="card card-body">
+                            <pre class="mb-0" style="max-height: 300px; overflow-y: auto; font-size:.8rem;">{{ log.mensagem }}</pre>
+                        </div>
+                    </div>
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> Nenhuma sincronização executada ainda.
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{{ url_for('detalhes_conta_principal', id=conta.conta_principal_id) }}"
+       class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(function () {
+    {% if logs %}
+    $('#logsTable').DataTable({
+        order: [[0, 'desc']],
+        pageLength: 25,
+        language: {
+            url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-BR.json'
+        },
+        columnDefs: [
+            { targets: 3, orderable: false },
+        ],
+    });
+    {% endif %}
+
+    // Polling de status em tempo real
+    const conta_id   = {{ conta.id }};
+    const badge      = document.getElementById('syncStatusBadge');
+    const badgeText  = document.getElementById('syncStatusText');
+    const btnParar   = document.getElementById('btnPararSync');
+    const progressPanel = document.getElementById('syncProgressPanel');
+    const progressText  = document.getElementById('syncProgressText');
+    let lastStatus   = null;
+    let parando      = false;
+
+    function checkStatus() {
+        fetch(`/conta-origem/${conta_id}/sync-status`)
+            .then(r => r.json())
+            .then(function (data) {
+                const status = data.status || 'idle';
+                const colors = { sucesso: 'success', erro: 'danger', executando: 'warning', idle: 'secondary' };
+                const labels = {
+                    sucesso: 'Sincronizado',
+                    erro: 'Erro',
+                    executando: parando ? 'Parando…' : 'Sincronizando…',
+                    idle: 'Aguardando'
+                };
+                badge.className = 'badge bg-' + (colors[status] || 'secondary');
+                badgeText.textContent = labels[status] || status;
+                if (btnParar) {
+                    btnParar.classList.toggle('d-none', status !== 'executando' || parando);
+                }
+                if (progressPanel && progressText) {
+                    const showProgress = status === 'executando' && (data.message || '').trim();
+                    progressPanel.classList.toggle('d-none', !showProgress);
+                    if (showProgress) {
+                        progressText.textContent = data.message;
+                    }
+                }
+                if (lastStatus === 'executando' && (status === 'sucesso' || status === 'erro')) {
+                    clearInterval(pollInterval);
+                    window.location.reload();
+                }
+                lastStatus = status;
+                if (status !== 'executando') {
+                    parando = false;
+                }
+            })
+            .catch(function () {});
+    }
+
+    if (btnParar) {
+        btnParar.addEventListener('click', function () {
+            if (!confirm('Parar a sincronização em andamento desta conta?')) {
+                return;
+            }
+            parando = true;
+            btnParar.disabled = true;
+            btnParar.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Parando…';
+            badgeText.textContent = 'Parando…';
+
+            fetch(`/conta-origem/${conta_id}/parar-sincronizacao`, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            })
+                .then(r => r.json())
+                .then(function (data) {
+                    if (data.success) {
+                        checkStatus();
+                        setTimeout(function () { window.location.reload(); }, 1500);
+                    } else {
+                        alert(data.message || 'Não foi possível parar a sincronização.');
+                        parando = false;
+                        btnParar.disabled = false;
+                        btnParar.innerHTML = '<i class="bi bi-stop-fill"></i> Parar sincronização';
+                        checkStatus();
+                    }
+                })
+                .catch(function () {
+                    alert('Erro de rede ao solicitar parada.');
+                    parando = false;
+                    btnParar.disabled = false;
+                    btnParar.innerHTML = '<i class="bi bi-stop-fill"></i> Parar sincronização';
+                });
+        });
+    }
+
+    checkStatus();
+    const pollInterval = setInterval(checkStatus, 3000);
+});
+</script>
+{% endblock %}

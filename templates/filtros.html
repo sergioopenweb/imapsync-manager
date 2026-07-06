@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}Filtros - {{ conta.nome }} - MailBridge{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-funnel"></i> Filtros Específicos
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0 gap-2">
+        <a href="{{ url_for('filtros_globais', conta_principal_id=conta.conta_principal_id) }}" class="btn btn-outline-primary">
+            <i class="bi bi-globe"></i> Ver Filtros Globais
+        </a>
+        <a href="{{ url_for('adicionar_filtro', conta_origem_id=conta.id) }}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Novo Filtro Específico
+        </a>
+        <a href="{{ url_for('detalhes_conta_principal', id=conta.conta_principal_id) }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<!-- Informações da conta -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">{{ conta.nome }}</h5>
+    </div>
+    <div class="card-body">
+        <p><strong>Email:</strong> {{ conta.email }}</p>
+        <p class="mb-0">
+            <strong>Status:</strong> 
+            <span class="badge bg-{{ 'success' if conta.ativa else 'secondary' }}">
+                {{ 'Ativa' if conta.ativa else 'Inativa' }}
+            </span>
+        </p>
+    </div>
+</div>
+
+<!-- Informativo -->
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    <strong>Filtros Específicos:</strong>
+    Estes filtros são aplicados <strong>apenas</strong> a esta conta de origem.
+    Se você quiser regras que valem para todas as contas, use os 
+    <a href="{{ url_for('filtros_globais', conta_principal_id=conta.conta_principal_id) }}" class="alert-link">
+        <i class="bi bi-globe"></i> Filtros Globais
+    </a>.
+</div>
+
+<div class="alert alert-warning">
+    <i class="bi bi-info-circle"></i>
+    <strong>Ordem de aplicação:</strong>
+    Primeiro são aplicados os <strong>filtros globais</strong> da conta principal, 
+    depois os <strong>filtros específicos</strong> desta conta de origem.
+</div>
+
+<!-- Lista de filtros -->
+<h3 class="mb-3">Filtros Específicos Configurados ({{ filtros|length }})</h3>
+
+{% if filtros %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th style="width: 30px;"></th>
+                <th>Nome</th>
+                <th>Critérios</th>
+                <th>Ações</th>
+                <th>Status</th>
+                <th style="width: 180px;">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for filtro in filtros %}
+            <tr class="{{ 'table-secondary' if not filtro.ativo else '' }}">
+                <td class="text-center">
+                    <i class="bi bi-funnel{{ '-fill' if filtro.ativo else '' }} text-{{ 'success' if filtro.ativo else 'muted' }}"></i>
+                </td>
+                <td>
+                    <strong>{{ filtro.nome }}</strong>
+                    <br>
+                    <small class="text-muted">
+                        <span class="badge bg-secondary">Específico</span>
+                        Criado em {{ filtro.criado_em.strftime('%d/%m/%Y') }}
+                    </small>
+                </td>
+                <td>
+                    <small>
+                        {% if filtro.criterio_remetente %}
+                        <div><i class="bi bi-person-fill text-primary"></i> <strong>De:</strong> {{ filtro.criterio_remetente }}</div>
+                        {% endif %}
+                        {% if filtro.criterio_destinatario %}
+                        <div><i class="bi bi-person-fill text-info"></i> <strong>Para:</strong> {{ filtro.criterio_destinatario }}</div>
+                        {% endif %}
+                        {% if filtro.criterio_assunto %}
+                        <div><i class="bi bi-chat-left-text text-warning"></i> <strong>Assunto:</strong> {{ filtro.criterio_assunto }}</div>
+                        {% endif %}
+                        {% if filtro.criterio_corpo %}
+                        <div><i class="bi bi-file-text text-secondary"></i> <strong>Corpo:</strong> {{ filtro.criterio_corpo[:50] }}...</div>
+                        {% endif %}
+                        {% if filtro.criterio_tem_anexo is not none %}
+                        <div><i class="bi bi-paperclip text-success"></i> <strong>Anexo:</strong> {{ 'Sim' if filtro.criterio_tem_anexo else 'Não' }}</div>
+                        {% endif %}
+                    </small>
+                </td>
+                <td>
+                    <small>
+                        {% if filtro.acao_pular_inbox %}
+                        <span class="badge bg-primary mb-1"><i class="bi bi-archive"></i> Pular inbox</span>
+                        {% endif %}
+                        {% if filtro.acao_aplicar_label %}
+                        <span class="badge bg-info mb-1"><i class="bi bi-tag"></i> {{ filtro.acao_aplicar_label }}</span>
+                        {% endif %}
+                        {% if filtro.acao_marcar_lido %}
+                        <span class="badge bg-success mb-1"><i class="bi bi-check2-circle"></i> Marcar lido</span>
+                        {% endif %}
+                        {% if filtro.acao_marcar_importante %}
+                        <span class="badge bg-warning text-dark mb-1"><i class="bi bi-star-fill"></i> Importante</span>
+                        {% endif %}
+                        {% if filtro.acao_deletar %}
+                        <span class="badge bg-danger mb-1"><i class="bi bi-trash"></i> Deletar</span>
+                        {% endif %}
+                        {% if filtro.acao_encaminhar_para %}
+                        <span class="badge bg-secondary mb-1"><i class="bi bi-forward"></i> {{ filtro.acao_encaminhar_para }}</span>
+                        {% endif %}
+                    </small>
+                </td>
+                <td>
+                    <span class="badge bg-{{ 'success' if filtro.ativo else 'secondary' }}">
+                        {{ 'Ativo' if filtro.ativo else 'Inativo' }}
+                    </span>
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <!-- Ativar/desativar -->
+                        <button type="button" class="btn btn-outline-primary"
+                                onclick="toggleFiltro({{ filtro.id }}, {{ filtro.ativo|tojson }})"
+                                title="{{ 'Desativar' if filtro.ativo else 'Ativar' }}">
+                            <i class="bi bi-{{ 'pause' if filtro.ativo else 'play' }}"></i>
+                        </button>
+                        <!-- Editar -->
+                        <a href="{{ url_for('editar_filtro', id=filtro.id) }}"
+                           class="btn btn-outline-warning" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <!-- Deletar -->
+                        <button type="button" class="btn btn-outline-danger"
+                                onclick="deletarFiltro({{ filtro.id }}, '{{ filtro.nome }}')" title="Deletar">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> Nenhum filtro específico configurado ainda.
+    <a href="{{ url_for('adicionar_filtro', conta_origem_id=conta.id) }}" class="alert-link">
+        Clique aqui para criar o primeiro filtro específico
+    </a>.
+</div>
+{% endif %}
+
+<!-- Exemplos de filtros -->
+<div class="card mt-4 bg-light">
+    <div class="card-body">
+        <h5 class="card-title"><i class="bi bi-lightbulb"></i> Filtros Específicos vs Globais</h5>
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="bi bi-funnel text-secondary"></i> Filtros Específicos (esta página):</h6>
+                <ul class="small mb-3">
+                    <li>Aplicados <strong>apenas a esta conta de origem</strong></li>
+                    <li>Exemplos: 
+                        <ul>
+                            <li>Filtrar assuntos específicos desta conta</li>
+                            <li>Organizar emails de um remetente específico</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="bi bi-globe text-primary"></i> Filtros Globais:</h6>
+                <ul class="small mb-3">
+                    <li>Aplicados a <strong>TODAS as contas de origem</strong></li>
+                    <li>Exemplos:
+                        <ul>
+                            <li>Arquivar todas as newsletters</li>
+                            <li>Marcar emails promocionais</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleFiltro(id, atualEstado) {
+    if (!confirm('Tem certeza que deseja ' + (atualEstado ? 'desativar' : 'ativar') + ' este filtro?')) return;
+
+    fetch(`/filtro/${id}/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) location.reload();
+        else alert('Erro ao alterar status: ' + data.message);
+    })
+    .catch(() => alert('Erro ao alterar status'));
+}
+
+function deletarFiltro(id, nome) {
+    if (!confirm(`Tem certeza que deseja deletar o filtro "${nome}"?`)) return;
+
+    fetch(`/filtro/${id}/deletar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) location.reload();
+        else alert('Erro ao deletar filtro: ' + data.message);
+    })
+    .catch(() => alert('Erro ao deletar filtro'));
+}
+</script>
+{% endblock %}

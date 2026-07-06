@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Adicionar Conta Principal - MailBridge{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h2 class="mb-4">Adicionar Conta Principal</h2>
+
+        <div class="alert alert-primary">
+            <i class="bi bi-info-circle"></i>
+            A conta principal é o destino dos e-mails sincronizados. Depois de adicionar, você poderá configurar as contas de origem que serão sincronizadas para ela.
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">Nome Descritivo *</label>
+                        <input type="text" class="form-control" id="nome" name="nome" required
+                               placeholder="Ex: Gmail Principal">
+                        <div class="form-text">Um nome para identificar esta conta</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="email" name="email" required
+                               placeholder="seu@email.com">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="servidor" class="form-label">Servidor IMAP *</label>
+                            <input type="text" class="form-control" id="servidor" name="servidor" required
+                                   placeholder="Ex: imap.gmail.com">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="porta" class="form-label">Porta *</label>
+                            <input type="number" class="form-control" id="porta" name="porta" value="993" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="ssl" class="form-label">SSL/TLS</label>
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" id="ssl" name="ssl" checked>
+                                <label class="form-check-label" for="ssl">Ativado</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="senha" class="form-label">Senha *</label>
+                        <input type="password" class="form-control" id="senha" name="senha" required>
+                    </div>
+
+                    <hr class="my-4">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Adicionar Conta
+                        </button>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

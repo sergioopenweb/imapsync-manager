@@ -1,0 +1,728 @@
+{% extends "base.html" %}
+
+{% block title %}Spam Analyzer - {{ conta.nome }} - MailBridge{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-shield-exclamation text-warning"></i> Spam Analyzer
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0 gap-2">
+        <a href="{{ url_for('detalhes_conta_principal', id=conta.id) }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<!-- Informações da conta -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-globe"></i> {{ conta.nome }}</h5>
+    </div>
+    <div class="card-body">
+        <p class="mb-0"><strong>Email:</strong> {{ conta.email }}</p>
+    </div>
+</div>
+
+<div class="card border-warning mb-4">
+    <div class="card-header bg-warning bg-opacity-25 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h5 class="mb-0"><i class="bi bi-shield-exclamation"></i> Configuração de Spam</h5>
+        <div>
+            {% if spam_analyzer_disponivel %}
+            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Pacote instalado</span>
+            {% if spam_config and spam_config.ativo %}
+            <span class="badge bg-info"><i class="bi bi-lightning"></i> Ativo na sincronização</span>
+            {% endif %}
+            {% else %}
+            <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Pacote não instalado</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        <p class="text-muted small mb-3">
+            Use o pacote <strong>spam-analyzer</strong> para classificar emails como spam durante a sincronização.
+            Defina para qual pasta os emails detectados como spam devem ser enviados e ajuste palavras e remetentes.
+        </p>
+        {% if not spam_analyzer_disponivel %}
+        <div class="alert alert-warning py-2 mb-3">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Pacote não detectado.</strong> A análise de spam só funciona após instalar: <code>pip install spam-analyzer</code>
+        </div>
+        {% endif %}
+        <form method="POST" action="{{ url_for('salvar_spam_analyzer', conta_principal_id=conta.id) }}">
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-auto">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="spam_analyzer_ativo" name="spam_analyzer_ativo"
+                               {{ 'checked' if spam_config and spam_config.ativo else '' }}>
+                        <label class="form-check-label fw-semibold" for="spam_analyzer_ativo">Ativar análise de spam</label>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label small mb-1">Quando detectar spam:</label>
+                    <div class="d-flex flex-wrap gap-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="spam_analyzer_acao" id="acao_mark_spam" value="mark_spam"
+                                   {{ 'checked' if not spam_config or spam_config.acao == 'mark_spam' else '' }}>
+                            <label class="form-check-label" for="acao_mark_spam">Marcar como spam (aplicar label/pasta de spam, manter na inbox)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="spam_analyzer_acao" id="acao_skip_inbox" value="skip_inbox"
+                                   {{ 'checked' if spam_config and spam_config.acao == 'skip_inbox' else '' }}>
+                            <label class="form-check-label" for="acao_skip_inbox">Mover para pasta de spam e ignorar inbox (arquivar)</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-auto">
+                    <button type="submit" class="btn btn-warning"><i class="bi bi-check2"></i> Salvar</button>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-1">
+                <div class="col-12 col-md-6">
+                    <label for="spam_analyzer_pasta_spam" class="form-label small">Pasta/Label de spam</label>
+                    <input type="text" class="form-control" id="spam_analyzer_pasta_spam" name="spam_analyzer_pasta_spam"
+                           value="{{ spam_config.pasta_spam if spam_config and spam_config.pasta_spam else '' }}"
+                           placeholder="Spam">
+                    <div class="form-text">
+                        Nome da pasta/label no destino usada quando um email é detectado como spam. Em “Marcar como spam”, o email fica na INBOX e recebe este label/pasta; em “Mover e ignorar inbox”, ele vai só para esta pasta/label.
+                        Deixe em branco para usar <strong>Spam</strong>.
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-3">
+            <h6 class="text-muted mb-2"><i class="bi bi-sliders"></i> Palavras e remetentes</h6>
+            <p class="small text-muted mb-2">
+                Adicione <strong>palavras extras</strong> manualmente ou marque emails como spam na lista “Emails sincronizados" — as palavras do assunto e do remetente serão usadas para barrar mensagens parecidas na próxima sincronização.
+                <strong>Palavras únicas com menos de 5 letras são ignoradas</strong> pelo analisador para reduzir falsos positivos.
+            </p>
+            <div class="row g-2">
+                <div class="col-12">
+                    <label for="spam_analyzer_remetentes_permitidos" class="form-label small">Remetentes permitidos / whitelist (um email por linha)</label>
+                    <textarea class="form-control font-monospace small" id="spam_analyzer_remetentes_permitidos" name="spam_analyzer_remetentes_permitidos"
+                              rows="6" placeholder="contato@banco.com">{{ spam_config.remetentes_permitidos if spam_config and spam_config.remetentes_permitidos else '' }}</textarea>
+                    <div class="form-text">Emails desses endereços nunca são tratados como spam.</div>
+                </div>
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label for="spam_analyzer_remetentes_bloqueados" class="form-label small mb-0">Remetentes bloqueados (um por linha)</label>
+                        <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2"
+                                onclick="ordenarRemetentes()" title="Ordenar por tipo e alfabeticamente">
+                            <i class="bi bi-sort-alpha-down"></i> Ordenar
+                        </button>
+                    </div>
+                    <textarea class="form-control font-monospace small" id="spam_analyzer_remetentes_bloqueados" name="spam_analyzer_remetentes_bloqueados"
+                              rows="6" placeholder="noreply@spammer.com">{{ spam_config.remetentes_bloqueados if spam_config and spam_config.remetentes_bloqueados else '' }}</textarea>
+                    <div class="form-text">
+                        Formatos aceitos:
+                        <code>email@dominio.com</code> (exato) &nbsp;·&nbsp;
+                        <code>@dominio.com</code> (domínio inteiro) &nbsp;·&nbsp;
+                        <code>usuario@</code> (usuário exato) &nbsp;·&nbsp;
+                        <code>usuario*@</code> (usuário começa com) &nbsp;·&nbsp;
+                        <code>*.dominio.com.br</code> (subdomínios) &nbsp;·&nbsp;
+                        <code>Nome</code> (nome de exibição, contém).
+                        Marcar um email como spam na lista de sincronizados adiciona o remetente aqui automaticamente.
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label for="spam_analyzer_wordlist" class="form-label small mb-0">Palavras que aumentam a detecção de spam</label>
+                        <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2"
+                                onclick="ordenarWordlist()" title="Ordenar: frases primeiro, depois palavras únicas">
+                            <i class="bi bi-sort-alpha-down"></i> Ordenar
+                        </button>
+                    </div>
+                    <textarea class="form-control font-monospace small" id="spam_analyzer_wordlist" name="spam_analyzer_wordlist"
+                              rows="6" placeholder="Uma por linha ou separadas por vírgula. Ex: oferta, grátis, ganhe, promoção, unsubscribe">{{ spam_config.wordlist_extra if spam_config and spam_config.wordlist_extra else '' }}</textarea>
+                    <div class="form-text">Use palavras com 5+ letras para melhor efeito. Frases (duas ou mais palavras) também funcionam. Marcar emails como spam na lista de “Emails sincronizados" adiciona palavras automaticamente.</div>
+                </div>
+            </div>
+
+            <hr class="my-3">
+            <h6 class="text-muted mb-2"><i class="bi bi-person-slash"></i> Heurísticas de detecção por identidade do remetente</h6>
+            <p class="small text-muted mb-2">
+                <strong>Herdar</strong> = usar a definição do nível utilizador/global.
+                Activar ou desactivar aqui sobrepõe apenas para esta conta.
+            </p>
+
+            <div class="row g-3 mb-3">
+                {% set heuristicas_conta = [
+                    ('heuristica_reply_to', 'Reply-To mismatch',
+                     'Reply-To num domínio diferente do From — phishing clássico. Não depende de listas.',
+                     spam_config.get('heuristica_reply_to') if spam_config else none),
+                    ('heuristica_display_name', 'Display name spoofing',
+                     'Nome institucional + domínio gratuito. Depende das listas abaixo.',
+                     spam_config.get('heuristica_display_name') if spam_config else none),
+                    ('heuristica_dominio_numerico', 'Domínio numérico suspeito',
+                     'Padrões numéricos típicos de spam em massa no endereço.',
+                     spam_config.get('heuristica_dominio_numerico') if spam_config else none),
+                ] %}
+                {% for campo, label, desc, conta_val in heuristicas_conta %}
+                <div class="col-12 col-md-4">
+                    <div class="card border h-100">
+                        <div class="card-body py-2 px-3">
+                            <p class="fw-semibold mb-1 small">{{ label }}</p>
+                            <p class="text-muted small mb-2">{{ desc }}</p>
+                            <div class="d-flex flex-column gap-1">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="{{ campo }}" value="herdar"
+                                           id="{{ campo }}_herdar_{{ conta.id }}"
+                                           {{ 'checked' if conta_val is none else '' }}>
+                                    <label class="form-check-label small" for="{{ campo }}_herdar_{{ conta.id }}">
+                                        Herdar (utilizador/global)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="{{ campo }}" value="1"
+                                           id="{{ campo }}_ativo_{{ conta.id }}"
+                                           {{ 'checked' if conta_val is not none and conta_val else '' }}>
+                                    <label class="form-check-label small text-success" for="{{ campo }}_ativo_{{ conta.id }}">
+                                        Forçar ativo
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="{{ campo }}" value="0"
+                                           id="{{ campo }}_inativo_{{ conta.id }}"
+                                           {{ 'checked' if conta_val is not none and not conta_val else '' }}>
+                                    <label class="form-check-label small text-danger" for="{{ campo }}_inativo_{{ conta.id }}">
+                                        Forçar inativo
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="card border-secondary mb-3">
+                <div class="card-body py-2 px-3">
+                    <p class="small text-muted mb-1">
+                        <i class="bi bi-info-circle"></i> <strong>Domínio numérico suspeito</strong> — exemplos de padrões detetados:
+                    </p>
+                    <ul class="small text-muted mb-0 ps-3">
+                        <li>Domínio termina em número: <code>envboxd<strong>2</strong>.com</code>, <code>sendbox<strong>54</strong>.com</code></li>
+                        <li>Subdomínio com 2+ dígitos: <code>atendimento<strong>567</strong>b.luminel.makeup</code></li>
+                        <li>Usuário com 5+ dígitos: <code>livia<strong>4331212</strong>@</code></li>
+                        <li>Usuário com 50+ caracteres (string de rastreamento)</li>
+                        <li>Sufixo aleatório após traço: <code>pauloroberto-<strong>ijs2</strong>@</code></li>
+                    </ul>
+                    <p class="small text-muted mt-1 mb-0">
+                        <i class="bi bi-info-circle"></i> Use a <strong>whitelist</strong> acima para proteger domínios legítimos (ex: <code>@office365.com</code>).
+                    </p>
+                </div>
+            </div>
+            <!-- Domínios gratuitos e palavras institucionais — somente leitura, geridos pelo admin -->
+            <div class="card border-0 bg-light mb-2">
+                <div class="card-body py-2 px-3">
+                    <p class="small mb-2 fw-semibold">
+                        <i class="bi bi-globe2"></i> Domínios gratuitos e palavras institucionais
+                        <span class="badge bg-secondary ms-1">Gerido pelo admin</span>
+                    </p>
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6">
+                            <p class="small text-muted mb-1">
+                                Domínios considerados gratuitos para detecção de spoofing:
+                            </p>
+                            {% set dominios = (global_cfg.dominios_gratuitos or '').splitlines() | select | list %}
+                            {% if dominios %}
+                            <div class="d-flex flex-wrap gap-1">
+                                {% for d in dominios %}
+                                <code class="badge bg-light text-dark border">{{ d }}</code>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted small fst-italic">Nenhum domínio configurado pelo admin.</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <p class="small text-muted mb-1">
+                                Palavras que indicam identidade institucional no display name:
+                            </p>
+                            {% set palavras = (global_cfg.palavras_institucionais or '').splitlines() | select | list %}
+                            {% if palavras %}
+                            <div class="d-flex flex-wrap gap-1">
+                                {% for p in palavras %}
+                                <code class="badge bg-light text-dark border">{{ p }}</code>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted small fst-italic">Nenhuma palavra configurada pelo admin.</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <p class="small text-muted mt-2 mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        Para alterar estas listas, aceda a
+                        {% if is_admin() %}
+                        <a href="{{ url_for('admin_spam_palavras_genericas') }}">Spam — Config Global</a>.
+                        {% else %}
+                        <strong>Spam — Config Global</strong> (apenas admin).
+                        {% endif %}
+                        Para permitir um remetente específico mesmo vindo de domínio gratuito, use a <strong>whitelist</strong> acima.
+                    </p>
+                </div>
+            </div>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-warning"><i class="bi bi-check2"></i> Salvar configuração</button>
+            </div>
+        </form>
+        <p class="small text-muted mt-3 mb-0">
+            {% if spam_analyzer_disponivel and spam_config and spam_config.ativo %}
+            <i class="bi bi-check-circle text-success"></i> Na próxima sincronização, cada email da INBOX será analisado e a ação escolhida será aplicada aos detectados como spam (enviados para a pasta definida acima).
+            {% elif spam_analyzer_disponivel %}
+            <i class="bi bi-info-circle"></i> Marque "Ativar análise de spam" e salve para que a análise rode na sincronização.
+            {% else %}
+            <i class="bi bi-info-circle"></i> Instale com <code>pip install spam-analyzer</code> e recarregue esta página.
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<div class="mb-3">
+    <a href="{{ url_for('detalhes_conta_principal', id=conta.id) }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar à conta
+    </a>
+    <a href="{{ url_for('emails_sincronizados_conta_principal', conta_principal_id=conta.id) }}" class="btn btn-outline-primary ms-2">
+        <i class="bi bi-envelope-check"></i> Ver todos os emails sincronizados
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ─── Ordenação ────────────────────────────────────────────────────────────────
+
+/**
+ * Retorna prioridade de ordenação para remetentes bloqueados:
+ * 0  *.dominio.com   (wildcards de domínio — mais abrangentes primeiro)
+ * 1  @dominio.com    (bloqueio de domínio inteiro)
+ * 2  prefixo*@       (wildcard de usuário)
+ * 3  prefixo@        (usuário exato)
+ * 4  user@domain     (email exato)
+ * 5  Nome            (display name)
+ */
+function tipoRemetente(e) {
+    if (e.startsWith('*.'))              return 0;
+    if (e.startsWith('@'))               return 1;
+    if (e.includes('*@'))                return 2;
+    if (e.endsWith('@'))                 return 3;
+    if (e.includes('@'))                 return 4;
+    return 5;
+}
+
+function ordenarRemetentes() {
+    const el = document.getElementById('spam_analyzer_remetentes_bloqueados');
+    const entradas = parseEntradas(el.value);
+    entradas.sort((a, b) => {
+        const ta = tipoRemetente(a), tb = tipoRemetente(b);
+        if (ta !== tb) return ta - tb;
+        return a.localeCompare(b);
+    });
+    el.value = entradas.join('\n');
+    renderizarAvisos();
+}
+
+/**
+ * Wordlist: frases com mais palavras primeiro (mais específicas),
+ * dentro do mesmo número de palavras ordem alfabética.
+ */
+function ordenarWordlist() {
+    const el = document.getElementById('spam_analyzer_wordlist');
+    const entradas = parseEntradas(el.value);
+    entradas.sort((a, b) => {
+        const wa = a.split(/\s+/).length, wb = b.split(/\s+/).length;
+        if (wa !== wb) return wb - wa;   // mais palavras primeiro
+        return a.localeCompare(b);
+    });
+    el.value = entradas.join('\n');
+    renderizarAvisos();
+}
+
+// ─── Utilitários ──────────────────────────────────────────────────────────────
+
+function parseEntradas(texto) {
+    return texto.split('\n')
+        .map(l => l.trim().toLowerCase())
+        .filter(l => l.length > 0);
+}
+
+function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Remetentes bloqueados ────────────────────────────────────────────────────
+
+/**
+ * Retorna true se `entrada` já é coberta por `outra` (pode ser removida).
+ *   prefixo@       cobre  prefixo@qualquerdominio.com
+ *   prefixo*@      cobre  prefixoXYZ@qualquerdominio.com  e  prefixo@exato
+ *   @dominio.com   cobre  qualquer@dominio.com
+ *   *.base.com     cobre  qualquer@sub.base.com  e  @sub.base.com
+ *   duplicata exata
+ */
+function cobertaPorRemetente(entrada, outra) {
+    if (entrada === outra) return true;
+
+    const eExato      = entrada.includes('@') && !entrada.startsWith('@') && !entrada.endsWith('@') && !entrada.includes('*');
+    const eDominio    = entrada.startsWith('@');
+    const eWild       = entrada.startsWith('*.');
+    const ePrefixo    = entrada.endsWith('@') && !entrada.includes('*');
+    const eWildUser   = entrada.includes('*@');
+
+    if (eExato) {
+        const atIdx = entrada.indexOf('@');
+        const user = entrada.slice(0, atIdx);
+        const domain = entrada.slice(atIdx + 1);
+        // coberto por prefixo@ exato
+        if (outra === user + '@') return true;
+        // coberto por prefixo*@ (username começa com prefixo)
+        if (outra.includes('*@')) {
+            const pfx = outra.split('*@')[0];
+            if (user.startsWith(pfx)) return true;
+        }
+        // coberto por @dominio
+        if (outra === '@' + domain) return true;
+        // coberto por *.base
+        if (outra.startsWith('*.') && domain.endsWith(outra.slice(1))) return true;
+    }
+    if (eDominio) {
+        const domain = entrada.slice(1);
+        if (outra.startsWith('*.') && domain.endsWith(outra.slice(1))) return true;
+    }
+    if (eWild) {
+        const base = entrada.slice(2);
+        if (outra.startsWith('*.') && outra !== entrada && base.endsWith(outra.slice(1))) return true;
+    }
+    if (ePrefixo) {
+        // prefixo@ coberto por prefixo*@ que seja mais abrangente (prefixo*@ onde prefixo é sub-prefixo)
+        const user = entrada.slice(0, -1);
+        if (outra.includes('*@')) {
+            const pfx = outra.split('*@')[0];
+            if (user.startsWith(pfx) && pfx.length < user.length) return true;
+        }
+    }
+    if (eWildUser) {
+        // prefixo*@ coberto por prefixo mais curto com wildcard
+        const pfx = entrada.split('*@')[0];
+        if (outra.includes('*@')) {
+            const pfxOutra = outra.split('*@')[0];
+            if (pfx.startsWith(pfxOutra) && pfxOutra.length < pfx.length) return true;
+        }
+    }
+    return false;
+}
+
+function analisarRedundanciasRemetentes(entradas) {
+    const resultado = [];
+    for (let i = 0; i < entradas.length; i++) {
+        for (let j = 0; j < entradas.length; j++) {
+            if (i === j) continue;
+            if (cobertaPorRemetente(entradas[i], entradas[j])) {
+                resultado.push({ entrada: entradas[i], cobertaPor: entradas[j] });
+                break;
+            }
+        }
+    }
+    return resultado;
+}
+
+function removerRedundantesRemetentes(texto) {
+    const entradas = parseEntradas(texto);
+    const filtradas = entradas.filter(e =>
+        !entradas.some(outra => outra !== e && cobertaPorRemetente(e, outra))
+    );
+    return [...new Set(filtradas)].join('\n');
+}
+
+// ─── Wordlist ─────────────────────────────────────────────────────────────────
+
+/**
+ * Retorna true se a frase `longa` é redundante porque `curta` já a contém
+ * como subsequência de palavras consecutivas.
+ * `curta` precisa ter pelo menos 2 palavras — palavras únicas genéricas
+ * (ex: "express", "pedido", "2026") não cobrem frases para evitar falsos positivos.
+ *
+ * Exemplo:
+ *   curta = "prazo final"
+ *   longa = "prazo final para regularização"  → redundante
+ *
+ *   curta = "protocolo 212692"
+ *   longa = "assinatura protocolo 212692"      → redundante
+ *
+ *   curta = "2026" (1 palavra) → NÃO cobre "fevereiro 2026"
+ */
+function fraseLongaRedundante(longa, curta) {
+    if (longa === curta) return false;
+    const wL = longa.split(/\s+/);
+    const wC = curta.split(/\s+/);
+    if (wC.length < 2 || wC.length >= wL.length) return false;
+    for (let i = 0; i <= wL.length - wC.length; i++) {
+        let ok = true;
+        for (let j = 0; j < wC.length; j++) {
+            if (wL[i + j] !== wC[j]) { ok = false; break; }
+        }
+        if (ok) return true;
+    }
+    return false;
+}
+
+/**
+ * Remove token(s) numérico(s) do final da frase.
+ * "protocolo 268763913"     → "protocolo"
+ * "assinatura protocolo 212692" → "assinatura protocolo"
+ * "regularize 763318"       → "regularize"
+ */
+function baseSeNumFinal(frase) {
+    return frase.replace(/(\s+\d+)+$/, '').trim();
+}
+
+function analisarRedundanciasWordlist(entradas) {
+    const resultado = [];
+
+    // 1) Duplicatas exatas
+    const vistas = new Set();
+    for (const e of entradas) {
+        if (vistas.has(e)) resultado.push({ entrada: e, cobertaPor: e, tipo: 'duplicata' });
+        else vistas.add(e);
+    }
+
+    const unicas = [...new Set(entradas)];
+
+    // 2) Frases longas cobertas por frases mais curtas (subfrase consecutiva)
+    for (const longa of unicas) {
+        if (resultado.some(r => r.entrada === longa)) continue;
+        for (const curta of unicas) {
+            if (fraseLongaRedundante(longa, curta)) {
+                resultado.push({ entrada: longa, cobertaPor: curta, tipo: 'subfrase' });
+                break;
+            }
+        }
+    }
+
+    // 3) Variantes numéricas: entradas que diferem apenas no(s) número(s) final(is)
+    //    Só consolida se a base tiver 2+ palavras — evita bases genéricas como
+    //    "regularize", "express", "pedido", "2026" que causariam falsos positivos
+    const grupos = new Map();
+    for (const e of unicas) {
+        if (resultado.some(r => r.entrada === e)) continue;
+        const base = baseSeNumFinal(e);
+        if (base !== e && base.split(/\s+/).length >= 2) {
+            if (!grupos.has(base)) grupos.set(base, []);
+            grupos.get(base).push(e);
+        }
+    }
+    for (const [base, variantes] of grupos) {
+        if (variantes.length < 2) continue;
+        for (const v of variantes) {
+            resultado.push({ entrada: v, cobertaPor: `"${base}" (consolidar)`, tipo: 'numerico', base });
+        }
+    }
+
+    return resultado;
+}
+
+function removerRedundantesWordlist(texto) {
+    const entradas = parseEntradas(texto);
+    const unicas = [...new Set(entradas)];
+
+    // Detectar bases numéricas com 2+ variantes (base deve ter 2+ palavras)
+    const grupos = new Map();
+    for (const e of unicas) {
+        const base = baseSeNumFinal(e);
+        if (base !== e && base.split(/\s+/).length >= 2) {
+            if (!grupos.has(base)) grupos.set(base, []);
+            grupos.get(base).push(e);
+        }
+    }
+    const substituirPorBase = new Set();
+    const basesParaAdicionar = new Set();
+    for (const [base, variantes] of grupos) {
+        if (variantes.length >= 2) {
+            variantes.forEach(v => substituirPorBase.add(v));
+            basesParaAdicionar.add(base);
+        }
+    }
+
+    // Filtrar: remover variantes numéricas e frases longas cobertas por curtas
+    let filtradas = unicas.filter(e => {
+        if (substituirPorBase.has(e)) return false;
+        return !unicas.some(curta => fraseLongaRedundante(e, curta));
+    });
+
+    // Adicionar as bases consolidadas (se não existirem já)
+    for (const base of basesParaAdicionar) {
+        if (!filtradas.includes(base)) filtradas.push(base);
+    }
+
+    // Segunda passagem: remover frases que agora são cobertas pelas novas bases
+    filtradas = filtradas.filter(e =>
+        !filtradas.some(curta => fraseLongaRedundante(e, curta))
+    );
+
+    return filtradas.join('\n');
+}
+
+// ─── Palavras únicas suspeitas ────────────────────────────────────────────────
+
+const PALAVRAS_GENERICAS = new Set({{ palavras_genericas | tojson }});
+
+/**
+ * Detecta palavras únicas na wordlist que podem causar falsos positivos.
+ * Inclui: palavras muito genéricas conhecidas + qualquer palavra única
+ * com menos de 7 caracteres (muito curta para ser específica como filtro).
+ */
+function analisarPalavrasUnicas(entradas) {
+    const suspeitas = [];
+    for (const e of entradas) {
+        if (e.includes(' ')) continue;  // só palavras únicas
+        if (PALAVRAS_GENERICAS.has(e) || e.length < 7) {
+            suspeitas.push(e);
+        }
+    }
+    return suspeitas;
+}
+
+// ─── Renderização ─────────────────────────────────────────────────────────────
+
+function renderizarAvisos() {
+    const elB = document.getElementById('spam_analyzer_remetentes_bloqueados');
+    const elW = document.getElementById('spam_analyzer_wordlist');
+    const container = document.getElementById('aviso-redundancias');
+
+    const redundBloq   = analisarRedundanciasRemetentes(parseEntradas(elB.value));
+    const redundWord   = analisarRedundanciasWordlist(parseEntradas(elW.value));
+    const palavrasUnic = analisarPalavrasUnicas(parseEntradas(elW.value));
+
+    if (redundBloq.length === 0 && redundWord.length === 0 && palavrasUnic.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    let html = '';
+
+    // ── Bloco 1: Redundâncias (warning amarelo + botão limpar) ────────────────
+    if (redundBloq.length > 0 || redundWord.length > 0) {
+        html += '<div class="alert alert-warning py-2 mt-2">';
+        html += '<div class="d-flex justify-content-between align-items-start gap-2">';
+        html += '<div class="flex-grow-1">';
+        html += '<strong><i class="bi bi-exclamation-triangle"></i> Entradas redundantes detectadas</strong>';
+
+        if (redundBloq.length > 0) {
+            html += `<p class="small mb-1 mt-1">Remetentes bloqueados — <strong>${redundBloq.length}</strong> entrada(s) já cobertas:</p>`;
+            html += '<ul class="small mb-1" style="max-height:120px;overflow-y:auto">';
+            for (const r of redundBloq) {
+                html += `<li><code>${escHtml(r.entrada)}</code> <span class="text-muted">→ coberto por</span> <code>${escHtml(r.cobertaPor)}</code></li>`;
+            }
+            html += '</ul>';
+        }
+
+        if (redundWord.length > 0) {
+            const dups  = redundWord.filter(r => r.tipo === 'duplicata');
+            const subfs = redundWord.filter(r => r.tipo === 'subfrase');
+            const nums  = redundWord.filter(r => r.tipo === 'numerico');
+            const numGrupos = new Map();
+            for (const r of nums) {
+                if (!numGrupos.has(r.base)) numGrupos.set(r.base, []);
+                numGrupos.get(r.base).push(r.entrada);
+            }
+            html += `<p class="small mb-1 mt-1">Wordlist — <strong>${redundWord.length}</strong> entrada(s) redundante(s):</p>`;
+            html += '<ul class="small mb-1" style="max-height:180px;overflow-y:auto">';
+            for (const r of dups) {
+                html += `<li><code>${escHtml(r.entrada)}</code> <span class="text-muted">→ duplicata</span></li>`;
+            }
+            for (const r of subfs) {
+                html += `<li><code>${escHtml(r.entrada)}</code> <span class="text-muted">→ coberto por</span> <code>${escHtml(r.cobertaPor)}</code></li>`;
+            }
+            for (const [base, variantes] of numGrupos) {
+                html += `<li><span class="text-muted">${variantes.length} variante(s) numérica(s) de</span> <code>${escHtml(base)}</code>: `;
+                html += variantes.map(v => `<code>${escHtml(v)}</code>`).join(', ');
+                html += ` <span class="text-muted">→ será consolidado em</span> <code>${escHtml(base)}</code></li>`;
+            }
+            html += '</ul>';
+        }
+
+        html += '</div>';
+        html += '<button type="button" class="btn btn-sm btn-warning flex-shrink-0" onclick="limparTudo()">';
+        html += '<i class="bi bi-magic"></i> Limpar redundantes</button>';
+        html += '</div></div>';
+    }
+
+    // ── Bloco 2: Palavras únicas suspeitas (info azul, sem auto-limpeza) ──────
+    if (palavrasUnic.length > 0) {
+        html += '<div class="alert alert-info py-2 mt-2">';
+        html += '<div class="d-flex justify-content-between align-items-start gap-2">';
+        html += '<div class="flex-grow-1">';
+        html += `<strong><i class="bi bi-info-circle"></i> Palavras únicas que podem causar falsos positivos</strong>`;
+        html += `<p class="small mb-1 mt-1">Revise se estas <strong>${palavrasUnic.length}</strong> palavra(s) são específicas o suficiente para usar como filtro de spam:</p>`;
+        html += '<p class="small mb-1">';
+        html += palavrasUnic.map(w => `<code>${escHtml(w)}</code>`).join(' ');
+        html += '</p>';
+        html += '<p class="small text-muted mb-0">Palavras muito genéricas como <em>pedido</em>, <em>express</em>, <em>regularize</em> podem bloquear emails legítimos. Prefira frases com 2+ palavras.</p>';
+        html += '</div>';
+        html += '<button type="button" class="btn btn-sm btn-outline-info flex-shrink-0" onclick="removerPalavrasUnicas()">';
+        html += '<i class="bi bi-trash"></i> Remover todas</button>';
+        html += '</div></div>';
+    }
+
+    container.innerHTML = html;
+}
+
+function removerPalavrasUnicas() {
+    const elW = document.getElementById('spam_analyzer_wordlist');
+    const antes = parseEntradas(elW.value).length;
+    const suspeitas = new Set(analisarPalavrasUnicas(parseEntradas(elW.value)));
+    elW.value = parseEntradas(elW.value).filter(e => !suspeitas.has(e)).join('\n');
+    const removidas = antes - parseEntradas(elW.value).length;
+    renderizarAvisos();
+    if (removidas > 0) {
+        const toast = document.createElement('div');
+        toast.className = 'alert alert-info py-1 px-2 small mt-1';
+        toast.innerHTML = `<i class="bi bi-check2"></i> ${removidas} palavra(s) única(s) removida(s) — clique em <strong>Salvar</strong> para confirmar.`;
+        document.getElementById('aviso-redundancias').prepend(toast);
+    }
+}
+
+function limparTudo() {
+    const elB = document.getElementById('spam_analyzer_remetentes_bloqueados');
+    const elW = document.getElementById('spam_analyzer_wordlist');
+    const antesB = parseEntradas(elB.value).length;
+    const antesW = parseEntradas(elW.value).length;
+
+    elB.value = removerRedundantesRemetentes(elB.value);
+    elW.value = removerRedundantesWordlist(elW.value);
+
+    const removB = antesB - parseEntradas(elB.value).length;
+    const removW = antesW - parseEntradas(elW.value).length;
+
+    renderizarAvisos();
+
+    const msgs = [];
+    if (removB > 0) msgs.push(`${removB} remetente(s) removido(s)`);
+    if (removW > 0) msgs.push(`${removW} palavra(s) removida(s)`);
+    if (msgs.length) {
+        const toast = document.createElement('div');
+        toast.className = 'alert alert-success py-1 px-2 small mt-1';
+        toast.innerHTML = `<i class="bi bi-check2"></i> ${msgs.join(' · ')} — clique em <strong>Salvar</strong> para confirmar.`;
+        document.getElementById('aviso-redundancias').prepend(toast);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const elW = document.getElementById('spam_analyzer_wordlist');
+    const elB = document.getElementById('spam_analyzer_remetentes_bloqueados');
+    if (!elW || !elB) return;
+
+    const col = elW.closest('.col-12');
+    const div = document.createElement('div');
+    div.id = 'aviso-redundancias';
+    col.after(div);
+
+    elB.addEventListener('input', renderizarAvisos);
+    elW.addEventListener('input', renderizarAvisos);
+
+    renderizarAvisos();
+});
+</script>
+{% endblock %}

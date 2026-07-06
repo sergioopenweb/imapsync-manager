@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Cadastro - ImapSync Manager{% endblock %}
+
+{% block content %}
+{% if session.user_id %}
+<script>window.location.href = "{{ url_for('dashboard') }}";</script>
+{% else %}
+	<div class="row justify-content-center mt-5">
+		<div class="col-md-6">
+			<div class="card">
+				<div class="card-body p-5">
+					<h3 class="text-center mb-4">Criar Conta</h3>
+					
+					<form method="POST">
+						<div class="mb-3">
+							<label for="nome" class="form-label">Nome Completo</label>
+							<input type="text" class="form-control" id="nome" name="nome" required>
+						</div>
+						<div class="mb-3">
+							<label for="email" class="form-label">Email</label>
+							<input type="email" class="form-control" id="email" name="email" required>
+						</div>
+						<div class="mb-3">
+							<label for="senha" class="form-label">Senha</label>
+							<input type="password" class="form-control" id="senha" name="senha" required minlength="6">
+							<div class="form-text">Mínimo de 6 caracteres</div>
+						</div>
+						<div class="mb-3">
+							<label for="confirmar_senha" class="form-label">Confirmar Senha</label>
+							<input type="password" class="form-control" id="confirmar_senha" name="confirmar_senha" required>
+						</div>
+						<button type="submit" class="btn btn-primary w-100">
+							<i class="bi bi-person-plus"></i> Cadastrar
+						</button>
+					</form>
+					
+					<hr class="my-4">
+					
+					<div class="text-center">
+						<p class="text-muted">Já tem uma conta?</p>
+						<a href="{{ url_for('login') }}" class="btn btn-outline-secondary">
+							<i class="bi bi-box-arrow-in-right"></i> Fazer Login
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endif %}
+{% endblock %}

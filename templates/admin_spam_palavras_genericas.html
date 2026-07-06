@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Configurações Padrão Spam - MailBridge{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-shield-exclamation"></i> Configurações Padrão — Spam Analyzer</h2>
+    <a href="{{ url_for('admin_usuarios') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar ao Admin
+    </a>
+</div>
+
+<div class="alert alert-info py-2 small mb-4">
+    <i class="bi bi-info-circle"></i>
+    Contas novas ou com campos em branco herdam automaticamente os valores das listas
+    <strong>Domínios gratuitos</strong> e <strong>Palavras institucionais</strong>.
+    A lista de <strong>Palavras genéricas</strong> só gera avisos no formulário de configuração — não afeta filtros ativos.
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-0" id="tabsSpam" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-dominios-btn" data-bs-toggle="tab"
+                data-bs-target="#tab-dominios" type="button">
+            <i class="bi bi-globe"></i> Domínios gratuitos
+            <span class="badge bg-secondary ms-1">{{ dominios_default|length }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-inst-btn" data-bs-toggle="tab"
+                data-bs-target="#tab-inst" type="button">
+            <i class="bi bi-building"></i> Palavras institucionais
+            <span class="badge bg-secondary ms-1">{{ palavras_inst_default|length }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-gen-btn" data-bs-toggle="tab"
+                data-bs-target="#tab-gen" type="button">
+            <i class="bi bi-tags"></i> Palavras genéricas
+            <span class="badge bg-secondary ms-1">{{ palavras_genericas|length }}</span>
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content border border-top-0 rounded-bottom p-4 bg-white">
+
+    <!-- ── Domínios gratuitos ── -->
+    <div class="tab-pane fade show active" id="tab-dominios">
+        <p class="text-muted small mb-3">
+            Contas sem <strong>domínios gratuitos</strong> configurados recebem esta lista automaticamente.
+            Usados para detectar spoofing: <em>"Banco Inter &lt;cobranca@gmail.com&gt;"</em>.
+        </p>
+        <!-- input adicionado via JS no DOMContentLoaded -->
+        <div id="lista-dominios" class="d-flex flex-wrap gap-2">
+            {% for d in dominios_default %}
+            <span class="badge bg-light text-dark border fs-6 fw-normal tag-item" data-valor="{{ d }}" data-lista="dominios" data-campo="dominio">
+                {{ d }}
+                <button type="button" class="btn-close btn-close-sm ms-1 align-middle" aria-label="Remover"
+                        onclick="removerItem(this)"></button>
+            </span>
+            {% else %}
+            <span class="text-muted" id="vazio-dominios">Nenhum domínio cadastrado.</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- ── Palavras institucionais ── -->
+    <div class="tab-pane fade" id="tab-inst">
+        <p class="text-muted small mb-3">
+            Contas sem <strong>palavras institucionais</strong> configuradas recebem esta lista automaticamente.
+            Usadas para bloquear display names como <em>"Bradesco"</em> vindo de domínio gratuito.
+        </p>
+        <div class="input-group mb-3" style="max-width:400px">
+            <input type="text" id="input-inst" class="form-control" placeholder="Nova palavra..."
+                   maxlength="100" onkeydown="if(event.key==='Enter') adicionarItem('input-inst','lista-inst','palavras-institucionais','palavra')">
+            <button class="btn btn-primary" type="button"
+                    onclick="adicionarItem('input-inst','lista-inst','palavras-institucionais','palavra')">
+                <i class="bi bi-plus-lg"></i> Adicionar
+            </button>
+        </div>
+        <div id="lista-inst" class="d-flex flex-wrap gap-2">
+            {% for p in palavras_inst_default %}
+            <span class="badge bg-light text-dark border fs-6 fw-normal tag-item" data-valor="{{ p }}" data-lista="palavras-institucionais" data-campo="palavra">
+                {{ p }}
+                <button type="button" class="btn-close btn-close-sm ms-1 align-middle" aria-label="Remover"
+                        onclick="removerItem(this)"></button>
+            </span>
+            {% else %}
+            <span class="text-muted" id="vazio-palavras-institucionais">Nenhuma palavra cadastrada.</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- ── Palavras genéricas ── -->
+    <div class="tab-pane fade" id="tab-gen">
+        <p class="text-muted small mb-3">
+            Palavras consideradas <strong>genéricas demais</strong> para usar como filtro isolado.
+            Quando o usuário adiciona uma dessas na wordlist, o formulário exibe um aviso — nenhum email é bloqueado por esta lista.
+        </p>
+        <div class="input-group mb-3" style="max-width:400px">
+            <input type="text" id="input-gen" class="form-control" placeholder="Nova palavra..."
+                   maxlength="100" onkeydown="if(event.key==='Enter') adicionarItem('input-gen','lista-gen','genericas','palavra')">
+            <button class="btn btn-primary" type="button"
+                    onclick="adicionarItem('input-gen','lista-gen','genericas','palavra')">
+                <i class="bi bi-plus-lg"></i> Adicionar
+            </button>
+        </div>
+        <div id="lista-gen" class="d-flex flex-wrap gap-2">
+            {% for p in palavras_genericas %}
+            <span class="badge bg-light text-dark border fs-6 fw-normal tag-item" data-valor="{{ p }}" data-lista="genericas" data-campo="palavra">
+                {{ p }}
+                <button type="button" class="btn-close btn-close-sm ms-1 align-middle" aria-label="Remover"
+                        onclick="removerItem(this)"></button>
+            </span>
+            {% else %}
+            <span class="text-muted" id="vazio-genericas">Nenhuma palavra cadastrada.</span>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+<div id="msg-feedback" class="mt-3" style="display:none"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const BASE_URL = '{{ url_for("admin_spam_palavras_genericas") }}';
+
+// Adiciona input para domínios separado (não coberto pelo macro)
+document.addEventListener('DOMContentLoaded', () => {
+    const wrap = document.createElement('div');
+    wrap.className = 'input-group mb-3';
+    wrap.style.maxWidth = '400px';
+    wrap.innerHTML = `
+        <input type="text" id="input-dominio" class="form-control" placeholder="Novo domínio..."
+               maxlength="100">
+        <button class="btn btn-primary" type="button" id="btn-add-dominio">
+            <i class="bi bi-plus-lg"></i> Adicionar
+        </button>`;
+    document.getElementById('lista-dominios').before(wrap);
+    document.getElementById('input-dominio').addEventListener('keydown', e => {
+        if (e.key === 'Enter') adicionarItem('input-dominio', 'lista-dominios', 'dominios', 'dominio');
+    });
+    document.getElementById('btn-add-dominio').addEventListener('click', () => {
+        adicionarItem('input-dominio', 'lista-dominios', 'dominios', 'dominio');
+    });
+});
+
+function feedback(msg, tipo) {
+    const el = document.getElementById('msg-feedback');
+    el.innerHTML = `<div class="alert alert-${tipo} py-2 px-3 small mb-0">${msg}</div>`;
+    el.style.display = '';
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.style.display = 'none'; }, 3500);
+}
+
+function atualizarBadge(lista, delta) {
+    const tabBtn = document.querySelector(`[data-bs-target="#tab-${lista}"]`) ||
+                   document.querySelector(`[data-bs-target="#tab-inst"]`);
+    if (!tabBtn) return;
+    const badge = tabBtn.querySelector('.badge');
+    if (badge) badge.textContent = parseInt(badge.textContent || '0') + delta;
+}
+
+function adicionarItem(inputId, listaId, endpoint, campo) {
+    const input = document.getElementById(inputId);
+    const valor = input.value.trim().toLowerCase();
+    if (!valor) return;
+
+    const body = { _acao: 'adicionar', [campo]: valor };
+    fetch(`${BASE_URL}/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(body)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) { feedback(data.message || 'Erro.', 'warning'); return; }
+
+        document.getElementById(`vazio-${listaId.replace('lista-', '')}`)?.remove();
+        document.getElementById(`vazio-${endpoint}`)?.remove();
+
+        const tag = document.createElement('span');
+        tag.className = 'badge bg-light text-dark border fs-6 fw-normal tag-item';
+        tag.dataset.valor = data[campo];
+        tag.dataset.lista = endpoint;
+        tag.dataset.campo = campo;
+        tag.innerHTML = `${escHtml(data[campo])}
+            <button type="button" class="btn-close btn-close-sm ms-1 align-middle"
+                    aria-label="Remover" onclick="removerItem(this)"></button>`;
+
+        const lista = document.getElementById(listaId);
+        const tags = [...lista.querySelectorAll('.tag-item')];
+        const proximo = tags.find(t => t.dataset.valor > data[campo]);
+        if (proximo) lista.insertBefore(tag, proximo);
+        else lista.appendChild(tag);
+
+        input.value = '';
+        feedback(`"${escHtml(data[campo])}" adicionado.`, 'success');
+    })
+    .catch(() => feedback('Erro de conexão.', 'danger'));
+}
+
+function removerItem(btn) {
+    const tag = btn.closest('.tag-item');
+    const valor = tag.dataset.valor;
+    const endpoint = tag.dataset.lista;
+    const campo = tag.dataset.campo;
+    const listaId = tag.closest('[id^="lista-"]')?.id;
+
+    if (!confirm(`Remover "${valor}"?`)) return;
+
+    const body = { _acao: 'remover', [campo]: valor };
+    fetch(`${BASE_URL}/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(body)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) { feedback(data.message || 'Erro.', 'warning'); return; }
+        tag.remove();
+        if (listaId && !document.querySelector(`#${listaId} .tag-item`)) {
+            const lista = document.getElementById(listaId);
+            const empty = document.createElement('span');
+            empty.className = 'text-muted';
+            empty.id = `vazio-${endpoint}`;
+            empty.textContent = 'Nenhum item cadastrado.';
+            lista.appendChild(empty);
+        }
+        feedback(`"${escHtml(valor)}" removido.`, 'success');
+    })
+    .catch(() => feedback('Erro de conexão.', 'danger'));
+}
+
+function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+{% endblock %}

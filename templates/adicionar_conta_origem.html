@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Adicionar Conta de Origem - MailBridge{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h2 class="mb-4">Adicionar Conta de Origem</h2>
+
+        <div class="alert alert-primary">
+            <i class="bi bi-info-circle"></i>
+            Esta conta será sincronizada para <strong>{{ conta_principal.nome }}</strong> ({{ conta_principal.email }})
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">Nome Descritivo *</label>
+                        <input type="text" class="form-control" id="nome" name="nome" required
+                               placeholder="Ex: Antiga Conta Yahoo">
+                        <div class="form-text">Um nome para identificar esta conta</div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="servidor" class="form-label">Servidor IMAP *</label>
+                            <input type="text" class="form-control" id="servidor" name="servidor" required
+                                   placeholder="Ex: imap.mail.yahoo.com">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="porta" class="form-label">Porta *</label>
+                            <input type="number" class="form-control" id="porta" name="porta" value="993" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="ssl" class="form-label">SSL/TLS</label>
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" id="ssl" name="ssl" checked>
+                                <label class="form-check-label" for="ssl">Ativado</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="email" name="email" required
+                               placeholder="seu@email.com">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="senha" class="form-label">Senha *</label>
+                        <input type="password" class="form-control" id="senha" name="senha" required>
+                    </div>
+
+                    <hr class="my-4">
+                    <h6 class="mb-3 text-muted text-uppercase" style="font-size:.75rem;letter-spacing:.05em;">
+                        <i class="bi bi-gear"></i> Comportamento após sincronização
+                    </h6>
+
+                    <div class="row g-3">
+                        <!-- Marcar como lido -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-primary border-opacity-25">
+                                <div class="card-body">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="marcar_lido" name="marcar_lido" checked>
+                                        <label class="form-check-label fw-semibold" for="marcar_lido">
+                                            <i class="bi bi-check2-circle text-success"></i>
+                                            Marcar como lido na origem
+                                        </label>
+                                    </div>
+                                    <p class="small text-muted mt-2 mb-0">
+                                        Após copiar, os e-mails serão marcados como <em>lido</em>
+                                        na conta de origem. Assim você sabe o que já foi transferido.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Deletar após X dias -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-warning border-opacity-25">
+                                <div class="card-body">
+                                    <label for="dias_manter" class="form-label fw-semibold">
+                                        <i class="bi bi-trash text-warning"></i>
+                                        Deletar da origem após
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="dias_manter"
+                                               name="dias_manter" value="30" min="0">
+                                        <span class="input-group-text">dias</span>
+                                    </div>
+                                    <p class="small text-muted mt-2 mb-0">
+                                        Mensagens com mais de X dias serão deletadas da origem.
+                                        Use <strong>0</strong> para nunca deletar.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-3">
+                        <div class="col-md-12">
+                            <div class="card h-100 border-info border-opacity-25">
+                                <div class="card-body">
+                                    <label for="label_destino" class="form-label fw-semibold">
+                                        <i class="bi bi-tag text-info"></i>
+                                        Aplicar label/pasta no destino
+                                    </label>
+                                    <input type="text" class="form-control" id="label_destino"
+                                           name="label_destino"
+                                           placeholder="Ex: Importados, Arquivo/2024, [Gmail]/Minha Label">
+                                    <p class="small text-muted mt-2 mb-0">
+                                        Todos os e-mails desta conta serão copiados também para esta
+                                        pasta/label no destino. Deixe em branco para usar apenas a Caixa de Entrada.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-6">
+                            <div class="card h-100 border-secondary border-opacity-25">
+                                <div class="card-body">
+                                    <label for="sync_intervalo_minutos" class="form-label fw-semibold">
+                                        <i class="bi bi-clock text-secondary"></i>
+                                        Intervalo de sincronização
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="sync_intervalo_minutos"
+                                               name="sync_intervalo_minutos" min="0" value="0">
+                                        <span class="input-group-text">minutos</span>
+                                    </div>
+                                    <p class="small text-muted mt-2 mb-0">
+                                        Use <strong>0</strong> para sincronizar sempre que o cron rodar.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Status</label>
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" id="ativa" name="ativa" checked>
+                                <label class="form-check-label" for="ativa">
+                                    Ativar sincronização automática
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning mt-4">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Atenção:</strong> Se configurar para deletar mensagens antigas,
+                        certifique-se de que a sincronização está funcionando corretamente antes de ativar.
+                    </div>
+
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-save"></i> Salvar Conta
+                        </button>
+                        <a href="{{ url_for('detalhes_conta_principal', id=conta_principal.id) }}"
+                           class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-lightbulb"></i> Como Funciona</h5>
+                <ol class="small">
+                    <li>Os e-mails da conta de origem são copiados para a conta principal</li>
+                    <li>Mensagens já existentes não são duplicadas (verificação por Message-ID)</li>
+                    <li>Se ativado, mensagens copiadas são marcadas como <em>lido</em> na origem</li>
+                    <li>Se configurado, mensagens antigas são deletadas da origem após X dias</li>
+                    <li>Todas as pastas são sincronizadas automaticamente</li>
+                </ol>
+                <hr>
+                <h6>Servidores Comuns:</h6>
+                <ul class="small mb-0">
+                    <li><strong>Gmail:</strong> imap.gmail.com:993</li>
+                    <li><strong>Outlook:</strong> outlook.office365.com:993</li>
+                    <li><strong>Yahoo:</strong> imap.mail.yahoo.com:993</li>
+                    <li><strong>iCloud:</strong> imap.mail.me.com:993</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Minha Conta - ImapSync Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-person-circle"></i> Minha Conta</h1>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-5">
+
+        <!-- Dados do usuário -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> Informações
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Nome</dt>
+                    <dd class="col-sm-8">{{ session.user_nome }}</dd>
+                    <dt class="col-sm-4">Email</dt>
+                    <dd class="col-sm-8">{{ session.user_email }}</dd>
+                    <dt class="col-sm-4">Perfil</dt>
+                    <dd class="col-sm-8">
+                        {% if is_admin() %}
+                        <span class="badge bg-primary"><i class="bi bi-shield-lock"></i> Administrador</span>
+                        {% else %}
+                        <span class="badge bg-secondary"><i class="bi bi-person"></i> Usuário</span>
+                        {% endif %}
+                    </dd>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Alterar senha -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-key"></i> Alterar Senha
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('minha_conta') }}">
+                    <div class="mb-3">
+                        <label for="senha_atual" class="form-label">Senha atual</label>
+                        <input type="password" class="form-control" id="senha_atual"
+                               name="senha_atual" required autocomplete="current-password">
+                    </div>
+                    <div class="mb-3">
+                        <label for="nova_senha" class="form-label">Nova senha</label>
+                        <input type="password" class="form-control" id="nova_senha"
+                               name="nova_senha" required minlength="6" autocomplete="new-password">
+                        <div class="form-text">Mínimo de 6 caracteres.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmar_senha" class="form-label">Confirmar nova senha</label>
+                        <input type="password" class="form-control" id="confirmar_senha"
+                               name="confirmar_senha" required autocomplete="new-password">
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-check-circle"></i> Alterar senha
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="col-md-6">
+
+        <!-- API Key -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-code-slash"></i> API Key</span>
+                <button class="btn btn-sm btn-outline-secondary" id="btnGerarKey"
+                        onclick="gerarApiKey()">
+                    <i class="bi bi-arrow-repeat"></i>
+                    {{ 'Regenerar' if api_key else 'Gerar' }}
+                </button>
+            </div>
+            <div class="card-body">
+                {% if api_key %}
+                <label class="form-label small text-muted">Sua chave de acesso à API REST</label>
+                <div class="input-group mb-2">
+                    <input type="text" class="form-control font-monospace small" id="apiKeyInput"
+                           value="{{ api_key }}" readonly>
+                    <button class="btn btn-outline-secondary" type="button" onclick="copiarKey()"
+                            title="Copiar">
+                        <i class="bi bi-clipboard" id="clipIcon"></i>
+                    </button>
+                </div>
+                {% else %}
+                <p class="text-muted small mb-3">
+                    Você ainda não tem uma API key. Clique em <strong>Gerar</strong> para criar uma.
+                </p>
+                <div class="input-group mb-2 d-none" id="newKeyGroup">
+                    <input type="text" class="form-control font-monospace small" id="apiKeyInput" readonly>
+                    <button class="btn btn-outline-secondary" type="button" onclick="copiarKey()"
+                            title="Copiar">
+                        <i class="bi bi-clipboard" id="clipIcon"></i>
+                    </button>
+                </div>
+                {% endif %}
+                <div class="alert alert-warning py-2 small mb-0">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Trate a API key como uma senha — não compartilhe. Ao regenerar, a antiga deixa de funcionar imediatamente.
+                </div>
+                <div class="mt-3">
+                    <p class="small text-muted mb-1">Exemplo de uso:</p>
+                    <code class="small">curl -H "X-API-Key: &lt;sua-key&gt;" {{ url_for('api_list_accounts', _external=True) }}</code>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function gerarApiKey() {
+    const btn = document.getElementById('btnGerarKey');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    try {
+        const res = await fetch('{{ url_for("minha_conta_gerar_api_key") }}', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            let input = document.getElementById('apiKeyInput');
+            const group = document.getElementById('newKeyGroup');
+            if (group) group.classList.remove('d-none');
+            if (input) input.value = data.api_key;
+            btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Regenerar';
+        } else {
+            alert('Erro: ' + (data.message || 'Tente novamente.'));
+            btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Gerar';
+        }
+    } catch {
+        alert('Erro de conexão.');
+        btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Gerar';
+    }
+    btn.disabled = false;
+}
+
+function copiarKey() {
+    const input = document.getElementById('apiKeyInput');
+    if (!input || !input.value) return;
+    navigator.clipboard.writeText(input.value).then(() => {
+        const icon = document.getElementById('clipIcon');
+        icon.className = 'bi bi-clipboard-check text-success';
+        setTimeout(() => { icon.className = 'bi bi-clipboard'; }, 2000);
+    });
+}
+</script>
+{% endblock %}

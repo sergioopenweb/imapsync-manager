@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block title %}Admin — Config Global de Spam - MailBridge{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-shield-exclamation text-warning"></i> Config Global de Spam</h2>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary" onclick="limparRedundanciasGlobal()">
+            <i class="bi bi-magic"></i> Limpar redundâncias
+        </button>
+        <a href="{{ url_for('admin_usuarios') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar ao Admin
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-warning py-2 small mb-4">
+    <i class="bi bi-broadcast"></i>
+    <strong>Nível global:</strong> estas regras aplicam-se a <strong>todas as contas ativas</strong> de <strong>todos os utilizadores</strong>.
+    Utilizadores e contas podem sobrepor ou complementar com as suas próprias listas.
+    <br>
+    <strong>Hierarquia:</strong> Global → Utilizador → Conta (os níveis inferiores adicionam ou sobrepõem).
+</div>
+
+<form method="POST" action="{{ url_for('admin_spam_global_salvar') }}">
+
+    <!-- ── Defaults de ativação ── -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h6 class="mb-0"><i class="bi bi-toggles"></i> Comportamento padrão para novas contas</h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-12 col-md-auto">
+                    <div class="form-check form-switch mt-1">
+                        <input class="form-check-input" type="checkbox" id="ativo_por_defeito" name="ativo_por_defeito"
+                               {{ 'checked' if global_cfg.ativo_por_defeito else '' }}>
+                        <label class="form-check-label" for="ativo_por_defeito">
+                            Spam Analyzer <strong>ativo por padrão</strong> em novas contas
+                        </label>
+                    </div>
+                </div>
+                <div class="col-12 col-md-5">
+                    <label class="form-label small mb-1">Ação por padrão:</label>
+                    <div class="d-flex gap-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="acao_por_defeito" value="mark_spam"
+                                   {{ 'checked' if global_cfg.acao_por_defeito != 'skip_inbox' else '' }}>
+                            <label class="form-check-label">Marcar como spam (aplicar label/pasta de spam, manter na inbox)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="acao_por_defeito" value="skip_inbox"
+                                   {{ 'checked' if global_cfg.acao_por_defeito == 'skip_inbox' else '' }}>
+                            <label class="form-check-label">Mover para pasta de spam e ignorar inbox (arquivar)</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label for="pasta_spam_padrao" class="form-label small mb-1">Pasta/Label de spam padrão</label>
+                    <input type="text" class="form-control form-control-sm" id="pasta_spam_padrao" name="pasta_spam_padrao"
+                           value="{{ global_cfg.pasta_spam_padrao or '' }}" placeholder="Spam">
+                    <div class="form-text">
+                        Usado quando a conta não define a sua própria pasta/label. Em “Marcar como spam”, este nome é aplicado como label/pasta; em “Mover e ignorar inbox”, ele é o destino principal.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Heurísticas globais ── -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h6 class="mb-0"><i class="bi bi-sliders"></i> Heurísticas globais</h6>
+        </div>
+        <div class="card-body">
+            <p class="small text-muted mb-3">
+                Ativar ou desativar heurísticas para <strong>todas as contas</strong>.
+                Utilizadores e contas individuais podem sobrepor estas definições.
+            </p>
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="heuristica_reply_to" name="heuristica_reply_to"
+                               {{ 'checked' if global_cfg.heuristica_reply_to else '' }}>
+                        <label class="form-check-label" for="heuristica_reply_to">
+                            <strong>Reply-To mismatch</strong>
+                            <span class="d-block small text-muted">Reply-To num domínio diferente do From</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="heuristica_display_name" name="heuristica_display_name"
+                               {{ 'checked' if global_cfg.heuristica_display_name else '' }}>
+                        <label class="form-check-label" for="heuristica_display_name">
+                            <strong>Display name spoofing</strong>
+                            <span class="d-block small text-muted">Nome institucional com domínio gratuito</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="heuristica_dominio_numerico" name="heuristica_dominio_numerico"
+                               {{ 'checked' if global_cfg.heuristica_dominio_numerico else '' }}>
+                        <label class="form-check-label" for="heuristica_dominio_numerico">
+                            <strong>Domínio numérico suspeito</strong>
+                            <span class="d-block small text-muted">Padrões numéricos em domínios de spam</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Listas globais de remetentes ── -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h6 class="mb-0"><i class="bi bi-person-lines-fill"></i> Remetentes globais</h6>
+        </div>
+        <div class="card-body">
+            <p class="small text-muted mb-3">
+                Aplicadas <strong>antes</strong> das listas de utilizador e conta.
+                A whitelist tem precedência sobre a blacklist em qualquer nível.
+            </p>
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label for="remetentes_permitidos" class="form-label small">
+                        <i class="bi bi-check-circle text-success"></i> Whitelist global (nunca spam)
+                    </label>
+                    <textarea class="form-control font-monospace small" id="remetentes_permitidos" name="remetentes_permitidos"
+                              rows="6" placeholder="suporte@empresa.com&#10;@dominio-confivel.com">{{ global_cfg.remetentes_permitidos or '' }}</textarea>
+                    <div class="form-text">Um por linha. Mesmos formatos do nível conta.</div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label for="remetentes_bloqueados" class="form-label small mb-0">
+                            <i class="bi bi-x-circle text-danger"></i> Blacklist global (sempre spam)
+                        </label>
+                        <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2"
+                                onclick="ordenarRemetentes('remetentes_bloqueados')">
+                            <i class="bi bi-sort-alpha-down"></i>
+                        </button>
+                    </div>
+                    <textarea class="form-control font-monospace small" id="remetentes_bloqueados" name="remetentes_bloqueados"
+                              rows="6" placeholder="@spammer.com&#10;*.massmail.net">{{ global_cfg.remetentes_bloqueados or '' }}</textarea>
+                    <div class="form-text">
+                        <code>email@dom.com</code> · <code>@dom.com</code> · <code>user@</code> · <code>user*@</code> · <code>*.dom.com</code> · <code>Nome</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Wordlist global ── -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h6 class="mb-0"><i class="bi bi-tag"></i> Wordlist global</h6>
+        </div>
+        <div class="card-body">
+            <p class="small text-muted mb-2">
+                Palavras ou frases aplicadas a <strong>todas as contas ativas</strong>, combinadas com as wordlists de utilizador e conta.
+                Use frases com 2+ palavras para reduzir falsos positivos.
+            </p>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <label for="wordlist_global" class="form-label small mb-0">Wordlist global (uma por linha)</label>
+                <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2"
+                        onclick="ordenarWordlist('wordlist_global')">
+                    <i class="bi bi-sort-alpha-down"></i>
+                </button>
+            </div>
+            <textarea class="form-control font-monospace small" id="wordlist_global" name="wordlist_global"
+                      rows="8" placeholder="Uma por linha. Ex: ganhe dinheiro fácil&#10;oferta exclusiva">{{ global_cfg.wordlist_global or '' }}</textarea>
+            <div class="form-text">
+                Palavras genéricas de referência:
+                {% if palavras_genericas %}
+                <span id="palavras-genericas-tags">
+                    {% for p in palavras_genericas[:20] %}
+                    <code class="me-1 text-primary" style="cursor:pointer" onclick="adicionarPalavraGenerica('{{ p }}')">{{ p }}</code>
+                    {% endfor %}
+                    {% if palavras_genericas|length > 20 %}
+                    <span class="text-muted">…e mais {{ palavras_genericas|length - 20 }}
+                        <a href="#" onclick="mostrarTodasGenericas(event)">ver todas</a>
+                    </span>
+                    {% endif %}
+                </span>
+                {% else %}
+                <em>Nenhuma palavra genérica cadastrada ainda.</em>
+                {% endif %}
+            </div>
+            <div id="todas-genericas" class="mt-1" style="display:none">
+                {% for p in palavras_genericas %}
+                <code class="me-1 text-primary" style="cursor:pointer" onclick="adicionarPalavraGenerica('{{ p }}')">{{ p }}</code>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Domínios e palavras institucionais ── -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h6 class="mb-0"><i class="bi bi-building"></i> Detecção de spoofing institucional</h6>
+        </div>
+        <div class="card-body">
+            <p class="small text-muted mb-3">
+                Usados pela heurística <strong>Display name spoofing</strong>. Emails com nome institucional vindos de domínio gratuito são spam.
+                As listas da conta são <strong>adicionadas</strong> (não substituem) às globais.
+            </p>
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label for="dominios_gratuitos" class="form-label small">Domínios gratuitos (um por linha)</label>
+                    <textarea class="form-control font-monospace small" id="dominios_gratuitos" name="dominios_gratuitos"
+                              rows="7" placeholder="gmail.com&#10;hotmail.com&#10;outlook.com&#10;yahoo.com">{{ global_cfg.dominios_gratuitos or '' }}</textarea>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="palavras_institucionais" class="form-label small">Palavras institucionais no display name (uma por linha)</label>
+                    <textarea class="form-control font-monospace small" id="palavras_institucionais" name="palavras_institucionais"
+                              rows="7" placeholder="banco&#10;receita&#10;cobrança&#10;suporte&#10;fatura">{{ global_cfg.palavras_institucionais or '' }}</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Palavras genéricas (referência) ── -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h6 class="mb-0 text-muted"><i class="bi bi-tags"></i> Palavras genéricas (referência na UI)</h6>
+        </div>
+        <div class="card-body py-2">
+            <p class="small text-muted mb-2">
+                Lista de palavras comuns de spam — usadas apenas como <strong>sugestões visuais</strong> nos formulários de configuração.
+                Não são aplicadas diretamente nos filtros. Adicionar aqui torna-as clicáveis na wordlist da conta.
+            </p>
+            <div id="lista-genericas" class="d-flex flex-wrap gap-2 mb-2">
+                {% for p in palavras_genericas %}
+                <span class="badge bg-light text-dark border fs-6 fw-normal tag-item" data-valor="{{ p }}">
+                    {{ p }}
+                    <button type="button" class="btn-close btn-close-sm ms-1 align-middle" aria-label="Remover"
+                            onclick="removerGenerica(this)"></button>
+                </span>
+                {% endfor %}
+            </div>
+            <div class="input-group input-group-sm mt-2" style="max-width:320px">
+                <input type="text" class="form-control" id="nova-generica" placeholder="Nova palavra genérica">
+                <button class="btn btn-outline-secondary" type="button" onclick="adicionarGenerica()">Adicionar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mb-4">
+        <button type="submit" class="btn btn-warning">
+            <i class="bi bi-check2"></i> Salvar config global
+        </button>
+        <a href="{{ url_for('admin_usuarios') }}" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const BASE_URL_GENERICAS = '{{ url_for("admin_spam_genericas_crud") }}';
+
+async function limparRedundanciasGlobal() {
+    if (!confirm('Aplicar limpeza de redundâncias na wordlist global e remover duplicados do nível usuário?')) return;
+    try {
+        const res = await fetch('{{ url_for("admin_spam_global_limpar_redundancias") }}', {method: 'POST'});
+        const data = await res.json();
+        if (data.success) {
+            alert(`Limpeza concluída. Usuários atualizados: ${data.usuarios_atualizados}`);
+            location.reload();
+        } else {
+            alert('Erro ao limpar redundâncias.');
+        }
+    } catch (e) {
+        alert('Erro de conexão ao limpar redundâncias.');
+    }
+}
+
+function tipoRemetente(e) {
+    if (e.startsWith('*.'))  return 0;
+    if (e.startsWith('@'))   return 1;
+    if (e.includes('*@'))    return 2;
+    if (e.endsWith('@'))     return 3;
+    if (e.includes('@'))     return 4;
+    return 5;
+}
+
+function ordenarRemetentes(id) {
+    const el = document.getElementById(id);
+    const entradas = el.value.split('\n').map(l => l.trim().toLowerCase()).filter(l => l);
+    entradas.sort((a, b) => {
+        const ta = tipoRemetente(a), tb = tipoRemetente(b);
+        return ta !== tb ? ta - tb : a.localeCompare(b);
+    });
+    el.value = entradas.join('\n');
+}
+
+function ordenarWordlist(id) {
+    const el = document.getElementById(id);
+    const entradas = el.value.split('\n').map(l => l.trim().toLowerCase()).filter(l => l);
+    entradas.sort((a, b) => {
+        const wa = a.split(/\s+/).length, wb = b.split(/\s+/).length;
+        return wa !== wb ? wb - wa : a.localeCompare(b);
+    });
+    el.value = entradas.join('\n');
+}
+
+function adicionarPalavraGenerica(palavra) {
+    const el = document.getElementById('wordlist_global');
+    const atual = el.value.trim();
+    const linhas = atual ? atual.split('\n').map(l => l.trim().toLowerCase()) : [];
+    if (!linhas.includes(palavra.toLowerCase())) {
+        el.value = (atual ? atual + '\n' : '') + palavra.toLowerCase();
+    }
+    el.focus();
+}
+
+function mostrarTodasGenericas(e) {
+    e.preventDefault();
+    document.getElementById('palavras-genericas-tags').style.display = 'none';
+    document.getElementById('todas-genericas').style.display = '';
+}
+
+// ── Palavras genéricas (referência) ───────────────────────────────────────────
+
+async function removerGenerica(btn) {
+    const span = btn.closest('.tag-item');
+    const valor = span.dataset.valor;
+    const res = await fetch(BASE_URL_GENERICAS, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({palavra: valor, _acao: 'remover'})
+    });
+    if ((await res.json()).success) span.remove();
+    else alert('Erro ao remover.');
+}
+
+async function adicionarGenerica() {
+    const input = document.getElementById('nova-generica');
+    const valor = input.value.trim().toLowerCase();
+    if (!valor) return;
+    const res = await fetch(BASE_URL_GENERICAS, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({palavra: valor})
+    });
+    const data = await res.json();
+    if (data.success) {
+        const lista = document.getElementById('lista-genericas');
+        const span = document.createElement('span');
+        span.className = 'badge bg-light text-dark border fs-6 fw-normal tag-item';
+        span.dataset.valor = valor;
+        span.innerHTML = `${valor} <button type="button" class="btn-close btn-close-sm ms-1 align-middle" onclick="removerGenerica(this)"></button>`;
+        lista.appendChild(span);
+        input.value = '';
+    } else {
+        alert(data.message || 'Erro ao adicionar.');
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Usuários - ImapSync Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-people"></i> Usuários</h2>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar ao Dashboard
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <p class="text-muted mb-3">
+            Gerencie usuários: ative/desative, conceda ou remova admin, entre na conta como o usuário ou delete.
+        </p>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>Admin</th>
+                        <th>Status</th>
+                        <th>Contas</th>
+                        <th>API Key</th>
+                        <th>Cadastro</th>
+                        <th class="text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in usuarios %}
+                    <tr id="row-user-{{ u.id }}">
+                        <td>{{ u.id }}</td>
+                        <td>{{ u.nome }}</td>
+                        <td>{{ u.email }}</td>
+                        <td id="admin-badge-{{ u.id }}">
+                            {% if u.admin %}
+                            <span class="badge bg-primary"><i class="bi bi-shield-fill-check"></i> Admin</span>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if u.ativo|default(1) else 'secondary' }}">
+                                {{ 'Ativo' if u.ativo|default(1) else 'Inativo' }}
+                            </span>
+                        </td>
+                        <td>{{ u.total_contas or 0 }}</td>
+                        <td>
+                            {% if u.api_key %}
+                            <code class="small" title="{{ u.api_key }}">{{ u.api_key[:12] }}…</code>
+                            {% else %}
+                            <span class="text-muted small">—</span>
+                            {% endif %}
+                            <button type="button" class="btn btn-link btn-sm py-0 text-muted"
+                                    title="Gerar nova API key"
+                                    onclick="gerarApiKey({{ u.id }})">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </td>
+                        <td>{{ u.criado_em.strftime('%d/%m/%Y %H:%M') if u.criado_em else '-' }}</td>
+                        <td class="text-end">
+                            <div class="d-flex justify-content-end gap-1 flex-wrap">
+                                <!-- Entrar como -->
+                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                        title="Entrar como este usuário"
+                                        onclick="document.getElementById('form-entrar-{{ u.id }}').submit();">
+                                    <i class="bi bi-box-arrow-in-right"></i>
+                                </button>
+                                <form id="form-entrar-{{ u.id }}" action="{{ url_for('admin_entrar_como', user_id=u.id) }}" method="POST" class="d-none"></form>
+
+                                {% if u.id != session.user_id %}
+                                <!-- Toggle admin -->
+                                <button type="button"
+                                        class="btn btn-sm {{ 'btn-primary' if u.admin else 'btn-outline-secondary' }}"
+                                        title="{{ 'Remover admin' if u.admin else 'Tornar admin' }}"
+                                        onclick="toggleAdmin({{ u.id }}, {{ u.admin|tojson }})">
+                                    <i class="bi bi-shield{{ '-fill-check' if u.admin else '' }}"></i>
+                                </button>
+
+                                <!-- Ativar/Desativar -->
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-warning"
+                                        title="{{ 'Desativar' if u.ativo|default(1) else 'Ativar' }} usuário"
+                                        onclick="toggleUsuario({{ u.id }}, {{ u.ativo|default(1)|tojson }})">
+                                    <i class="bi bi-{{ 'pause-circle' if u.ativo|default(1) else 'play-circle' }}"></i>
+                                </button>
+
+                                <!-- Deletar -->
+                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                        title="Deletar usuário"
+                                        onclick="deletarUsuario({{ u.id }}, '{{ u.nome | e }}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                {% else %}
+                                <span class="badge bg-secondary">você</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted">Nenhum usuário cadastrado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleAdmin(id, adminAtual) {
+    var acao = adminAtual ? 'remover admin de' : 'tornar admin';
+    if (!confirm('Tem certeza que deseja ' + acao + ' este usuário?')) return;
+    fetch('/admin/usuarios/' + id + '/toggle-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin'
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Erro ao alterar admin.');
+        }
+    })
+    .catch(function() { alert('Erro de conexão.'); });
+}
+
+function toggleUsuario(id, ativoAtual) {
+    var acao = ativoAtual ? 'desativar' : 'ativar';
+    if (!confirm('Tem certeza que deseja ' + acao + ' este usuário?')) return;
+    fetch('/admin/usuarios/' + id + '/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin'
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Erro ao alterar status.');
+        }
+    })
+    .catch(function() { alert('Erro de conexão.'); });
+}
+
+function deletarUsuario(id, nome) {
+    if (!confirm('Deletar o usuário "' + nome + '"?\n\nTodas as contas e dados serão removidos.\nEsta ação não pode ser desfeita.')) return;
+    fetch('/admin/usuarios/' + id + '/deletar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin'
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.message || 'Erro ao deletar usuário.');
+        }
+    })
+    .catch(function() { alert('Erro de conexão.'); });
+}
+
+function gerarApiKey(id) {
+    if (!confirm('Gerar uma nova API key para este usuário?\n\nA key atual será invalidada.')) return;
+    fetch('/admin/usuarios/' + id + '/gerar-api-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin'
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            alert('Nova API key gerada:\n\n' + data.api_key + '\n\nAnote em local seguro.');
+            window.location.reload();
+        } else {
+            alert(data.message || 'Erro ao gerar API key.');
+        }
+    })
+    .catch(function() { alert('Erro de conexão.'); });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Filtro - MailBridge{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-9">
+        <h2 class="mb-4">Editar Filtro: {{ filtro.nome }}</h2>
+
+        <div class="alert alert-primary">
+            <i class="bi bi-info-circle"></i>
+            {% if is_global %}
+            Filtro global da conta principal <strong>{{ filtro.conta_principal_nome }}</strong>
+            {% else %}
+            Filtro da conta <strong>{{ filtro.conta_nome }}</strong>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">Nome do Filtro *</label>
+                        <input type="text" class="form-control" id="nome" name="nome" 
+                               value="{{ filtro.nome }}" required>
+                    </div>
+
+                    <hr class="my-4">
+                    <h5 class="mb-3">
+                        <i class="bi bi-search"></i> Critérios de Correspondência
+                    </h5>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="criterio_remetente" class="form-label">
+                                <i class="bi bi-person-fill text-primary"></i> Remetente (De:)
+                            </label>
+                            <input type="text" class="form-control" id="criterio_remetente" 
+                                   name="criterio_remetente"
+                                   value="{{ filtro.criterio_remetente or '' }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="criterio_destinatario" class="form-label">
+                                <i class="bi bi-person-fill text-info"></i> Destinatário (Para:)
+                            </label>
+                            <input type="text" class="form-control" id="criterio_destinatario" 
+                                   name="criterio_destinatario"
+                                   value="{{ filtro.criterio_destinatario or '' }}">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <label for="criterio_assunto" class="form-label">
+                                <i class="bi bi-chat-left-text text-warning"></i> Assunto contém
+                            </label>
+                            <input type="text" class="form-control" id="criterio_assunto" 
+                                   name="criterio_assunto"
+                                   value="{{ filtro.criterio_assunto or '' }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="criterio_corpo" class="form-label">
+                                <i class="bi bi-file-text text-secondary"></i> Corpo contém
+                            </label>
+                            <input type="text" class="form-control" id="criterio_corpo" 
+                                   name="criterio_corpo"
+                                   value="{{ filtro.criterio_corpo or '' }}">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="bi bi-paperclip text-success"></i> Tem anexo
+                            </label>
+                            <select class="form-select" id="criterio_tem_anexo" name="criterio_tem_anexo">
+                                <option value="" {% if filtro.criterio_tem_anexo is none %}selected{% endif %}>
+                                    Ignorar (não filtrar por anexo)
+                                </option>
+                                <option value="true" {% if filtro.criterio_tem_anexo == 1 %}selected{% endif %}>
+                                    Sim, tem anexo
+                                </option>
+                                <option value="false" {% if filtro.criterio_tem_anexo == 0 %}selected{% endif %}>
+                                    Não, sem anexo
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+                    <h5 class="mb-3">
+                        <i class="bi bi-lightning-fill"></i> Ações
+                    </h5>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card h-100 border-primary border-opacity-25">
+                                <div class="card-body">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="acao_pular_inbox" name="acao_pular_inbox"
+                                               {% if filtro.acao_pular_inbox %}checked{% endif %}>
+                                        <label class="form-check-label fw-semibold" for="acao_pular_inbox">
+                                            <i class="bi bi-archive text-primary"></i>
+                                            Pular caixa de entrada
+                                        </label>
+                                    </div>
+                                    <p class="small text-muted mt-2 mb-0">
+                                        O email será arquivado
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card h-100 border-success border-opacity-25">
+                                <div class="card-body">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="acao_marcar_lido" name="acao_marcar_lido"
+                                               {% if filtro.acao_marcar_lido %}checked{% endif %}>
+                                        <label class="form-check-label fw-semibold" for="acao_marcar_lido">
+                                            <i class="bi bi-check2-circle text-success"></i>
+                                            Marcar como lido
+                                        </label>
+                                    </div>
+                                    <p class="small text-muted mt-2 mb-0">
+                                        Marcar automaticamente como lido
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <div class="card h-100 border-info border-opacity-25">
+                                <div class="card-body">
+                                    <label for="acao_aplicar_label" class="form-label fw-semibold">
+                                        <i class="bi bi-tag text-info"></i>
+                                        Aplicar marcador/label
+                                    </label>
+                                    <input type="text" class="form-control" id="acao_aplicar_label"
+                                           name="acao_aplicar_label"
+                                           value="{{ filtro.acao_aplicar_label or '' }}">
+                                    <p class="small text-muted mt-2 mb-0">
+                                        Cria uma pasta com este nome
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card h-100 border-warning border-opacity-25">
+                                <div class="card-body">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="acao_marcar_importante" name="acao_marcar_importante"
+                                               {% if filtro.acao_marcar_importante %}checked{% endif %}>
+                                        <label class="form-check-label fw-semibold" for="acao_marcar_importante">
+                                            <i class="bi bi-star-fill text-warning"></i>
+                                            Marcar como importante
+                                        </label>
+                                    </div>
+                                    <p class="small text-muted mt-2 mb-0">
+                                        Adiciona flag de estrela
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <div class="card h-100 border-danger border-opacity-25">
+                                <div class="card-body">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="acao_deletar" name="acao_deletar"
+                                               {% if filtro.acao_deletar %}checked{% endif %}>
+                                        <label class="form-check-label fw-semibold" for="acao_deletar">
+                                            <i class="bi bi-trash text-danger"></i>
+                                            Deletar email
+                                        </label>
+                                    </div>
+                                    <p class="small text-muted mt-2 mb-0">
+                                        Move para a lixeira
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card h-100 border-secondary border-opacity-25">
+                                <div class="card-body">
+                                    <label for="acao_encaminhar_para" class="form-label fw-semibold">
+                                        <i class="bi bi-forward text-secondary"></i>
+                                        Encaminhar para
+                                    </label>
+                                    <input type="email" class="form-control" id="acao_encaminhar_para"
+                                           name="acao_encaminhar_para"
+                                           value="{{ filtro.acao_encaminhar_para or '' }}">
+                                    <p class="small text-muted mt-2 mb-0">
+                                        Encaminha para outro email
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="ativo" name="ativo"
+                               {% if filtro.ativo %}checked{% endif %}>
+                        <label class="form-check-label fw-semibold" for="ativo">
+                            Filtro ativo
+                        </label>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-3 flex-wrap">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-save"></i> Salvar Alterações
+                        </button>
+                        {% if is_global %}
+                        <a href="{{ url_for('filtros_globais', conta_principal_id=filtro.conta_principal_id) }}"
+                           class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('filtros_conta', conta_origem_id=filtro.conta_origem_id) }}"
+                           class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        {% endif %}
+                        <button type="button" class="btn btn-outline-danger ms-auto" id="btn-deletar-filtro"
+                                data-filtro-id="{{ filtro.id }}"
+                                data-filtro-nome="{{ filtro.nome | e }}"
+                                data-redirect="{% if is_global %}{{ url_for('filtros_globais', conta_principal_id=filtro.conta_principal_id) }}{% else %}{{ url_for('filtros_conta', conta_origem_id=filtro.conta_origem_id) }}{% endif %}"
+                                title="Remover este filtro">
+                            <i class="bi bi-trash"></i> Deletar filtro
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-clock-history"></i> Informações</h5>
+                <p class="small mb-2">
+                    <strong>Criado em:</strong><br>
+                    {{ filtro.criado_em.strftime('%d/%m/%Y às %H:%M') }}
+                </p>
+                {% if filtro.atualizado_em and filtro.atualizado_em != filtro.criado_em %}
+                <p class="small mb-0">
+                    <strong>Atualizado em:</strong><br>
+                    {{ filtro.atualizado_em.strftime('%d/%m/%Y às %H:%M') }}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header py-2">
+                <h6 class="mb-0"><i class="bi bi-envelope-check"></i> Últimos emails que este filtro pegou</h6>
+            </div>
+            <div class="card-body p-2">
+                {% if ultimos_emails %}
+                <ul class="list-group list-group-flush list-group-small">
+                    {% for e in ultimos_emails %}
+                    <li class="list-group-item px-2 py-2 small border-0">
+                        <span class="d-block text-truncate" title="{{ e.assunto or '(sem assunto)' }}">
+                            <strong>{{ (e.assunto or '(sem assunto)')[:50] }}{% if (e.assunto or '')|length > 50 %}…{% endif %}</strong>
+                        </span>
+                        <span class="d-block text-muted text-truncate" title="{{ e.remetente or '' }}">{{ (e.remetente or '')[:40] }}{% if (e.remetente or '')|length > 40 %}…{% endif %}</span>
+                        <span class="d-block text-muted" style="font-size: 0.75rem;">{{ e.aplicado_em.strftime('%d/%m %H:%M') }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="small text-muted mb-0">Nenhum email registrado ainda. Os próximos que baterem neste filtro na sincronização aparecerão aqui.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('btn-deletar-filtro').addEventListener('click', function() {
+    var id = this.getAttribute('data-filtro-id');
+    var nome = this.getAttribute('data-filtro-nome');
+    var redirect = this.getAttribute('data-redirect');
+    if (!confirm('Tem certeza que deseja deletar o filtro "' + nome + '"? Esta ação não pode ser desfeita.')) return;
+
+    fetch('/filtro/' + id + '/deletar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) window.location.href = redirect;
+        else alert('Erro ao deletar filtro: ' + (data.message || ''));
+    })
+    .catch(function() { alert('Erro ao deletar filtro'); });
+});
+</script>
+{% endblock %}

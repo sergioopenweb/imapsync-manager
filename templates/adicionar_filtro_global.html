@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Filtro Global - MailBridge{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-9">
+        <h2 class="mb-4">
+            <i class="bi bi-globe"></i> Novo Filtro Global
+        </h2>
+
+        <div class="alert alert-primary">
+            <i class="bi bi-info-circle"></i>
+            <strong>Filtro Global:</strong> Este filtro será aplicado a <strong>TODAS</strong> as contas de origem 
+            que sincronizam para <strong>{{ conta.nome }}</strong> ({{ conta.email }})
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">Nome do Filtro *</label>
+                        <input type="text" class="form-control" id="nome" name="nome" required
+                               placeholder="Ex: Arquivar Newsletters">
+                    </div>
+
+                    <hr class="my-4">
+                    <h5 class="mb-3">
+                        <i class="bi bi-search"></i> Critérios de Correspondência
+                    </h5>
+                    <p class="small text-muted">Defina quando este filtro deve ser aplicado:</p>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="criterio_remetente" class="form-label">
+                                <i class="bi bi-person-fill text-primary"></i> Remetente (De:)
+                            </label>
+                            <input type="text" class="form-control" id="criterio_remetente" 
+                                   name="criterio_remetente"
+                                   placeholder="Ex: newsletter@site.com, @mailchimp.com">
+                            <div class="form-text">Email ou domínio. Use vírgulas para múltiplos.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="criterio_destinatario" class="form-label">
+                                <i class="bi bi-person-fill text-info"></i> Destinatário (Para:)
+                            </label>
+                            <input type="text" class="form-control" id="criterio_destinatario" 
+                                   name="criterio_destinatario"
+                                   placeholder="Ex: contato@meudominio.com">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <label for="criterio_assunto" class="form-label">
+                                <i class="bi bi-chat-left-text text-warning"></i> Assunto contém
+                            </label>
+                            <input type="text" class="form-control" id="criterio_assunto" 
+                                   name="criterio_assunto"
+                                   placeholder="Ex: newsletter, unsubscribe, oferta">
+                            <div class="form-text">Palavras-chave separadas por vírgula</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="criterio_corpo" class="form-label">
+                                <i class="bi bi-file-text text-secondary"></i> Corpo contém
+                            </label>
+                            <input type="text" class="form-control" id="criterio_corpo" 
+                                   name="criterio_corpo"
+                                   placeholder="Ex: clique aqui, promoção">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="bi bi-paperclip text-success"></i> Tem anexo
+                            </label>
+                            <select class="form-select" id="criterio_tem_anexo" name="criterio_tem_anexo">
+                                <option value="" selected>Ignorar (não filtrar por anexo)</option>
+                                <option value="true">Sim, tem anexo</option>
+                                <option value="false">Não, sem anexo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+                    <h5 class="mb-3">
+                        <i class="bi bi-lightning-fill"></i> Ações
+                    </h5>
+                    <p class="small text-muted">O que fazer quando um email corresponder aos critérios:</p>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card h-100 border-primary border-opacity-25">
+                                <div class="card-body">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="acao_pular_inbox" name="acao_pular_inbox">
+                                        <label class="form-check-label fw-semibold" for="acao_pular_inbox">
+                                            <i class="bi bi-archive text-primary"></i>
+                                            Pular caixa de entrada
+                                        </label>
+                                    </div>
+                                    <p class="small text-muted mt-2 mb-0">
+                                        O email será arquivado automaticamente
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card h-100 border-success border-opacity-25">
+                                <div class="card-body">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="acao_marcar_lido" name="acao_marcar_lido">
+                                        <label class="form-check-label fw-semibold" for="acao_marcar_lido">
+                                            <i class="bi bi-check2-circle text-success"></i>
+                                            Marcar como lido
+                                        </label>
+                                    </div>
+                                    <p class="small text-muted mt-2 mb-0">
+                                        Marcar automaticamente como lido
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <div class="card h-100 border-info border-opacity-25">
+                                <div class="card-body">
+                                    <label for="acao_aplicar_label" class="form-label fw-semibold">
+                                        <i class="bi bi-tag text-info"></i>
+                                        Aplicar marcador/label
+                                    </label>
+                                    <input type="text" class="form-control" id="acao_aplicar_label"
+                                           name="acao_aplicar_label"
+                                           placeholder="Ex: Newsletters">
+                                    <p class="small text-muted mt-2 mb-0">
+                                        Cria uma pasta com este nome
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card h-100 border-warning border-opacity-25">
+                                <div class="card-body">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="acao_marcar_importante" name="acao_marcar_importante">
+                                        <label class="form-check-label fw-semibold" for="acao_marcar_importante">
+                                            <i class="bi bi-star-fill text-warning"></i>
+                                            Marcar como importante
+                                        </label>
+                                    </div>
+                                    <p class="small text-muted mt-2 mb-0">
+                                        Adiciona flag de estrela
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <div class="card h-100 border-danger border-opacity-25">
+                                <div class="card-body">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="acao_deletar" name="acao_deletar">
+                                        <label class="form-check-label fw-semibold" for="acao_deletar">
+                                            <i class="bi bi-trash text-danger"></i>
+                                            Deletar email
+                                        </label>
+                                    </div>
+                                    <p class="small text-muted mt-2 mb-0">
+                                        Move para a lixeira (use com cuidado!)
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card h-100 border-secondary border-opacity-25">
+                                <div class="card-body">
+                                    <label for="acao_encaminhar_para" class="form-label fw-semibold">
+                                        <i class="bi bi-forward text-secondary"></i>
+                                        Encaminhar para
+                                    </label>
+                                    <input type="email" class="form-control" id="acao_encaminhar_para"
+                                           name="acao_encaminhar_para"
+                                           placeholder="email@exemplo.com">
+                                    <p class="small text-muted mt-2 mb-0">
+                                        Encaminha para outro email
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="ativo" name="ativo" checked>
+                        <label class="form-check-label fw-semibold" for="ativo">
+                            Ativar filtro imediatamente
+                        </label>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Atenção:</strong> Este filtro será aplicado a TODAS as sincronizações 
+                        de TODAS as contas de origem desta conta principal.
+                    </div>
+
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-save"></i> Criar Filtro Global
+                        </button>
+                        <a href="{{ url_for('filtros_globais', conta_principal_id=conta.id) }}"
+                           class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card bg-primary bg-opacity-10 border-primary">
+            <div class="card-body">
+                <h5 class="card-title text-primary">
+                    <i class="bi bi-globe"></i> Filtro Global
+                </h5>
+                <p class="small mb-0">
+                    Este filtro será aplicado automaticamente a <strong>todas</strong> as contas 
+                    de origem que sincronizam para esta conta principal.
+                </p>
+            </div>
+        </div>
+
+        <div class="card bg-light mt-3">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-lightbulb"></i> Dicas</h5>
+                <ul class="small mb-0">
+                    <li>Use filtros globais para regras que valem para <strong>todos</strong> os emails</li>
+                    <li>Exemplos: arquivar newsletters, marcar promoções</li>
+                    <li>Para regras específicas de uma conta, use filtros por conta de origem</li>
+                    <li>Filtros globais são aplicados primeiro, depois os específicos</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

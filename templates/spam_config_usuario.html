@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Minha Config de Spam - MailBridge{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pb-2 mb-3 border-bottom">
+    <h2><i class="bi bi-shield-exclamation text-warning"></i> Configuração de Spam — Minha conta</h2>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Dashboard
+    </a>
+</div>
+
+<div class="alert alert-info py-2 small mb-4">
+    <i class="bi bi-info-circle"></i>
+    <strong>Nível utilizador:</strong> estas regras aplicam-se a <strong>todas as suas contas</strong>, em complemento às regras globais do administrador.
+    Cada conta pode ainda ter as suas próprias regras adicionais.
+    <br>
+    <strong>Hierarquia:</strong> Global (admin) → <strong>Aqui (utilizador)</strong> → Conta individual.
+</div>
+
+<form method="POST" action="{{ url_for('salvar_spam_config_usuario') }}">
+
+    <!-- ── Remetentes ── -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning bg-opacity-25">
+            <h6 class="mb-0"><i class="bi bi-person-lines-fill"></i> Remetentes — válido para todas as suas contas</h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label for="remetentes_permitidos" class="form-label small">
+                        <i class="bi bi-check-circle text-success"></i> Whitelist pessoal (nunca spam)
+                    </label>
+                    <textarea class="form-control font-monospace small" id="remetentes_permitidos" name="remetentes_permitidos"
+                              rows="7" placeholder="amigo@exemplo.com&#10;@empresa-confivel.com">{{ user_cfg.remetentes_permitidos or '' }}</textarea>
+                    <div class="form-text">
+                        Remetentes aqui listados <strong>nunca</strong> serão tratados como spam em nenhuma das suas contas.
+                        Sobrepõem a blacklist global.
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label for="remetentes_bloqueados" class="form-label small mb-0">
+                            <i class="bi bi-x-circle text-danger"></i> Blacklist pessoal (sempre spam)
+                        </label>
+                        <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2"
+                                onclick="ordenarRemetentes()">
+                            <i class="bi bi-sort-alpha-down"></i>
+                        </button>
+                    </div>
+                    <textarea class="form-control font-monospace small" id="remetentes_bloqueados" name="remetentes_bloqueados"
+                              rows="7" placeholder="@spammer.com&#10;*.massmail.net&#10;Nome Suspeito">{{ user_cfg.remetentes_bloqueados or '' }}</textarea>
+                    <div class="form-text">
+                        <code>email@dom.com</code> · <code>@dom.com</code> · <code>user@</code> · <code>user*@</code> · <code>*.dom.com</code> · <code>Nome</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Wordlist ── -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning bg-opacity-25">
+            <h6 class="mb-0"><i class="bi bi-tag"></i> Palavras extras — válido para todas as suas contas</h6>
+        </div>
+        <div class="card-body">
+            <p class="small text-muted mb-2">
+                Combinadas com a wordlist global e com a wordlist de cada conta.
+                Use frases com 2+ palavras para reduzir falsos positivos.
+            </p>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <label for="wordlist_extra" class="form-label small mb-0">Palavras/frases (uma por linha)</label>
+                <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2"
+                        onclick="ordenarWordlist()">
+                    <i class="bi bi-sort-alpha-down"></i>
+                </button>
+            </div>
+            <textarea class="form-control font-monospace small" id="wordlist_extra" name="wordlist_extra"
+                      rows="7" placeholder="oferta exclusiva&#10;ganhe dinheiro&#10;clique aqui">{{ user_cfg.wordlist_extra or '' }}</textarea>
+            {% if palavras_genericas %}
+            <div class="form-text">
+                Sugestões:
+                {% for p in palavras_genericas %}
+                <code class="me-1 text-primary" style="cursor:pointer" onclick="adicionarPalavra('{{ p }}')">{{ p }}</code>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ── Heurísticas ── -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning bg-opacity-25">
+            <h6 class="mb-0"><i class="bi bi-sliders"></i> Heurísticas — sobrepor definição global</h6>
+        </div>
+        <div class="card-body">
+            <p class="small text-muted mb-3">
+                <strong>Herdar</strong> = usar a definição do administrador.
+                Activar/desactivar aqui sobrepõe a definição global para todas as suas contas
+                (as contas individuais podem ainda sobrepor as suas).
+            </p>
+            <div class="row g-4">
+                {% set heuristicas = [
+                    ('heuristica_reply_to', 'Reply-To mismatch',
+                     'Reply-To num domínio diferente do From — phishing clássico.',
+                     global_cfg.heuristica_reply_to, user_cfg.get('heuristica_reply_to')),
+                    ('heuristica_display_name', 'Display name spoofing',
+                     'Nome institucional com domínio gratuito.',
+                     global_cfg.heuristica_display_name, user_cfg.get('heuristica_display_name')),
+                    ('heuristica_dominio_numerico', 'Domínio numérico suspeito',
+                     'Padrões numéricos em domínios típicos de spam em massa.',
+                     global_cfg.heuristica_dominio_numerico, user_cfg.get('heuristica_dominio_numerico')),
+                ] %}
+                {% for campo, label, desc, global_val, user_val in heuristicas %}
+                <div class="col-12 col-md-4">
+                    <div class="card border h-100">
+                        <div class="card-body py-2 px-3">
+                            <p class="fw-semibold mb-1 small">{{ label }}</p>
+                            <p class="text-muted small mb-2">{{ desc }}</p>
+                            <div class="d-flex flex-column gap-1">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="{{ campo }}" value="herdar"
+                                           id="{{ campo }}_herdar"
+                                           {{ 'checked' if user_val is none else '' }}>
+                                    <label class="form-check-label small" for="{{ campo }}_herdar">
+                                        Herdar do admin
+                                        <span class="badge {{ 'bg-success' if global_val else 'bg-danger' }} ms-1">
+                                            {{ 'Ativo' if global_val else 'Inativo' }}
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="{{ campo }}" value="1"
+                                           id="{{ campo }}_ativo"
+                                           {{ 'checked' if user_val is not none and user_val else '' }}>
+                                    <label class="form-check-label small" for="{{ campo }}_ativo">
+                                        <span class="text-success">Forçar ativo</span>
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="{{ campo }}" value="0"
+                                           id="{{ campo }}_inativo"
+                                           {{ 'checked' if user_val is not none and not user_val else '' }}>
+                                    <label class="form-check-label small" for="{{ campo }}_inativo">
+                                        <span class="text-danger">Forçar inativo</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mb-4">
+        <button type="submit" class="btn btn-warning">
+            <i class="bi bi-check2"></i> Salvar
+        </button>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function tipoRemetente(e) {
+    if (e.startsWith('*.'))  return 0;
+    if (e.startsWith('@'))   return 1;
+    if (e.includes('*@'))    return 2;
+    if (e.endsWith('@'))     return 3;
+    if (e.includes('@'))     return 4;
+    return 5;
+}
+
+function ordenarRemetentes() {
+    const el = document.getElementById('remetentes_bloqueados');
+    const entradas = el.value.split('\n').map(l => l.trim().toLowerCase()).filter(l => l);
+    entradas.sort((a, b) => {
+        const ta = tipoRemetente(a), tb = tipoRemetente(b);
+        return ta !== tb ? ta - tb : a.localeCompare(b);
+    });
+    el.value = entradas.join('\n');
+}
+
+function ordenarWordlist() {
+    const el = document.getElementById('wordlist_extra');
+    const entradas = el.value.split('\n').map(l => l.trim().toLowerCase()).filter(l => l);
+    entradas.sort((a, b) => {
+        const wa = a.split(/\s+/).length, wb = b.split(/\s+/).length;
+        return wa !== wb ? wb - wa : a.localeCompare(b);
+    });
+    el.value = entradas.join('\n');
+}
+
+function adicionarPalavra(p) {
+    const el = document.getElementById('wordlist_extra');
+    const atual = el.value.trim();
+    const linhas = atual ? atual.split('\n').map(l => l.trim().toLowerCase()) : [];
+    if (!linhas.includes(p.toLowerCase())) {
+        el.value = (atual ? atual + '\n' : '') + p.toLowerCase();
+    }
+}
+</script>
+{% endblock %}

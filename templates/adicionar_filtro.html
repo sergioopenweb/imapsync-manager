@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Filtro - {{ conta.nome }} - MailBridge{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-9">
+        <h2 class="mb-4">Criar Novo Filtro de Email</h2>
+
+        <div class="alert alert-primary">
+            <i class="bi bi-info-circle"></i>
+            Este filtro será aplicado aos emails da conta <strong>{{ conta.nome }}</strong> ({{ conta.email }})
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" id="formFiltro">
+
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">Nome do Filtro *</label>
+                        <input type="text" class="form-control" id="nome" name="nome" required
+                               placeholder="Ex: RegistroBR, Newsletters, GitHub">
+                        <div class="form-text">Um nome descritivo para identificar este filtro</div>
+                    </div>
+
+                    <hr class="my-4">
+                    <h5 class="mb-3">
+                        <i class="bi bi-search"></i> Critérios de Correspondência
+                    </h5>
+                    <p class="text-muted small">
+                        Defina pelo menos um critério. O email será filtrado se corresponder a qualquer um dos critérios.
+                    </p>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="criterio_remetente" class="form-label">
+                                <i class="bi bi-person-fill text-primary"></i> Remetente (De:)
+                            </label>
+                            <input type="text" class="form-control" id="criterio_remetente" 
+                                   name="criterio_remetente"
+                                   placeholder="Ex: pagamento@registro.br ou @gmail.com">
+                            <div class="form-text">Email completo, domínio (@domain.com) ou palavra-chave</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="criterio_destinatario" class="form-label">
+                                <i class="bi bi-person-fill text-info"></i> Destinatário (Para:)
+                            </label>
+                            <input type="text" class="form-control" id="criterio_destinatario" 
+                                   name="criterio_destinatario"
+                                   placeholder="Ex: vendas@minhaempresa.com">
+                            <div class="form-text">Email do destinatário</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <label for="criterio_assunto" class="form-label">
+                                <i class="bi bi-chat-left-text text-warning"></i> Assunto contém
+                            </label>
+                            <input type="text" class="form-control" id="criterio_assunto" 
+                                   name="criterio_assunto"
+                                   placeholder="Ex: fatura, newsletter, confirmação">
+                            <div class="form-text">Palavras no assunto (separadas por vírgula para OR)</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="criterio_corpo" class="form-label">
+                                <i class="bi bi-file-text text-secondary"></i> Corpo contém
+                            </label>
+                            <input type="text" class="form-control" id="criterio_corpo" 
+                                   name="criterio_corpo"
+                                   placeholder="Ex: unsubscribe, cancelar inscrição">
+                            <div class="form-text">Palavras no corpo do email</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="bi bi-paperclip text-success"></i> Tem anexo
+                            </label>
+                            <select class="form-select" id="criterio_tem_anexo" name="criterio_tem_anexo">
+                                <option value="">Ignorar (não filtrar por anexo)</option>
+                                <option value="true">Sim, tem anexo</option>
+                                <option value="false">Não, sem anexo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+                    <h5 class="mb-3">
+                        <i class="bi bi-lightning-fill"></i> Ações
+                    </h5>
+                    <p class="text-muted small">
+                        Defina pelo menos uma ação a ser aplicada quando o email corresponder aos critérios.
+                    </p>
+
+                    <div class="row g-3">
+                        <!-- Pular Inbox -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-primary border-opacity-25">
+                                <div class="card-body">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="acao_pular_inbox" name="acao_pular_inbox">
+                                        <label class="form-check-label fw-semibold" for="acao_pular_inbox">
+                                            <i class="bi bi-archive text-primary"></i>
+                                            Pular caixa de entrada
+                                        </label>
+                                    </div>
+                                    <p class="small text-muted mt-2 mb-0">
+                                        O email será arquivado (não aparece na inbox)
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Marcar como lido -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-success border-opacity-25">
+                                <div class="card-body">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="acao_marcar_lido" name="acao_marcar_lido">
+                                        <label class="form-check-label fw-semibold" for="acao_marcar_lido">
+                                            <i class="bi bi-check2-circle text-success"></i>
+                                            Marcar como lido
+                                        </label>
+                                    </div>
+                                    <p class="small text-muted mt-2 mb-0">
+                                        O email será marcado automaticamente como lido
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-2">
+                        <!-- Aplicar Label -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-info border-opacity-25">
+                                <div class="card-body">
+                                    <label for="acao_aplicar_label" class="form-label fw-semibold">
+                                        <i class="bi bi-tag text-info"></i>
+                                        Aplicar marcador/label
+                                    </label>
+                                    <input type="text" class="form-control" id="acao_aplicar_label"
+                                           name="acao_aplicar_label"
+                                           placeholder="Ex: RegistroBR, GitHub, Trabalho">
+                                    <p class="small text-muted mt-2 mb-0">
+                                        Cria uma pasta com este nome e move o email para ela
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Marcar importante -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-warning border-opacity-25">
+                                <div class="card-body">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="acao_marcar_importante" name="acao_marcar_importante">
+                                        <label class="form-check-label fw-semibold" for="acao_marcar_importante">
+                                            <i class="bi bi-star-fill text-warning"></i>
+                                            Marcar como importante
+                                        </label>
+                                    </div>
+                                    <p class="small text-muted mt-2 mb-0">
+                                        Adiciona flag de estrela/importante ao email
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-2">
+                        <!-- Deletar -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-danger border-opacity-25">
+                                <div class="card-body">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="acao_deletar" name="acao_deletar">
+                                        <label class="form-check-label fw-semibold" for="acao_deletar">
+                                            <i class="bi bi-trash text-danger"></i>
+                                            Deletar email
+                                        </label>
+                                    </div>
+                                    <p class="small text-muted mt-2 mb-0">
+                                        <strong>Cuidado!</strong> O email será movido para a lixeira
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Encaminhar -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-secondary border-opacity-25">
+                                <div class="card-body">
+                                    <label for="acao_encaminhar_para" class="form-label fw-semibold">
+                                        <i class="bi bi-forward text-secondary"></i>
+                                        Encaminhar para
+                                    </label>
+                                    <input type="email" class="form-control" id="acao_encaminhar_para"
+                                           name="acao_encaminhar_para"
+                                           placeholder="email@destino.com">
+                                    <p class="small text-muted mt-2 mb-0">
+                                        Encaminha o email para outro endereço
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="ativo" name="ativo" checked>
+                        <label class="form-check-label fw-semibold" for="ativo">
+                            Ativar filtro imediatamente
+                        </label>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-save"></i> Criar Filtro
+                        </button>
+                        <a href="{{ url_for('filtros_conta', conta_origem_id=conta.id) }}"
+                           class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-lightbulb"></i> Dicas</h5>
+                <ul class="small">
+                    <li>Use vírgulas para múltiplas opções: "fatura, invoice, boleto"</li>
+                    <li>Use @ para filtrar domínios: "@gmail.com"</li>
+                    <li>Combine critérios e ações para automação completa</li>
+                    <li>Filtros são aplicados na ordem de criação</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card bg-light mt-3">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-info-circle"></i> Exemplos</h5>
+                <div class="small">
+                    <strong>Filtro de Newsletter:</strong>
+                    <ul class="mb-2">
+                        <li>Assunto: "unsubscribe"</li>
+                        <li>Ações: Marcar lido + Label "Newsletters"</li>
+                    </ul>
+                    
+                    <strong>Filtro de Faturas:</strong>
+                    <ul class="mb-0">
+                        <li>De: "@registro.br"</li>
+                        <li>Ações: Label "RegistroBR" + Pular inbox</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Validação básica do formulário
+document.getElementById('formFiltro').addEventListener('submit', function(e) {
+    // Verificar se pelo menos um critério foi preenchido
+    const criterios = [
+        document.getElementById('criterio_remetente').value,
+        document.getElementById('criterio_destinatario').value,
+        document.getElementById('criterio_assunto').value,
+        document.getElementById('criterio_corpo').value,
+        document.getElementById('criterio_tem_anexo').value
+    ];
+    
+    const temCriterio = criterios.some(c => c && c.trim() !== '');
+    
+    if (!temCriterio) {
+        e.preventDefault();
+        alert('Por favor, defina pelo menos um critério de correspondência.');
+        return false;
+    }
+    
+    // Verificar se pelo menos uma ação foi selecionada
+    const acoes = [
+        document.getElementById('acao_pular_inbox').checked,
+        document.getElementById('acao_marcar_lido').checked,
+        document.getElementById('acao_marcar_importante').checked,
+        document.getElementById('acao_deletar').checked,
+        document.getElementById('acao_aplicar_label').value.trim() !== '',
+        document.getElementById('acao_encaminhar_para').value.trim() !== ''
+    ];
+    
+    const temAcao = acoes.some(a => a);
+    
+    if (!temAcao) {
+        e.preventDefault();
+        alert('Por favor, defina pelo menos uma ação a ser aplicada.');
+        return false;
+    }
+    
+    return true;
+});
+</script>
+{% endblock %}

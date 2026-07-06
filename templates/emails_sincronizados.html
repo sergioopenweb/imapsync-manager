@@ -1,0 +1,475 @@
+{% extends "base.html" %}
+
+{% block title %}Emails Sincronizados - {{ conta.nome }} - ImapSync Manager{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+<style>
+    .emails-sync-table-wrapper {
+        width: 100%;
+        max-width: 100%;
+        max-height: 65vh;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.5rem;
+    }
+
+    .emails-sync-table {
+        width: max-content;
+        min-width: 100%;
+    }
+
+    .emails-sync-table th,
+    .emails-sync-table td {
+        white-space: nowrap;
+    }
+
+    .emails-sync-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: var(--bs-body-bg);
+    }
+
+    .emails-sync-table thead th:last-child,
+    .emails-sync-table tbody td:last-child {
+        position: sticky;
+        right: 0;
+        background: var(--bs-body-bg);
+    }
+
+    .emails-sync-table thead th:last-child {
+        z-index: 4;
+    }
+
+    .emails-sync-table tbody td:last-child {
+        z-index: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-envelope-check"></i> Emails Sincronizados
+    </h1>
+    <div class="btn-toolbar gap-2 flex-wrap">
+        <a href="{{ url_for('emails_sincronizados', conta_origem_id=conta.id) }}"
+           class="btn btn-sm {{ 'btn-primary' if not apenas_spam and not apenas_detectados_pelo_filtro and not apenas_filtros_email else 'btn-outline-primary' }}">
+            <i class="bi bi-list"></i> Todos
+        </a>
+        <a href="{{ url_for('emails_sincronizados', conta_origem_id=conta.id, filtro_spam=1) }}"
+           class="btn btn-sm {{ 'btn-warning' if apenas_detectados_pelo_filtro else 'btn-outline-warning' }}"
+           title="Emails que o Spam Analyzer classificou como spam na sincronização">
+            <i class="bi bi-shield-exclamation"></i> Spam (filtro)
+        </a>
+        <a href="{{ url_for('emails_sincronizados', conta_origem_id=conta.id, filtros_email=1) }}"
+           class="btn btn-sm {{ 'btn-info' if apenas_filtros_email else 'btn-outline-info' }}"
+           title="Emails que bateram em algum filtro global ou específico (label, arquivar, marcar lido, etc.)">
+            <i class="bi bi-funnel"></i> Filtros globais/específicos
+        </a>
+        <a href="{{ url_for('emails_sincronizados', conta_origem_id=conta.id, spam=1) }}"
+           class="btn btn-sm {{ 'btn-outline-danger' if not apenas_spam else 'btn-danger' }}">
+            <i class="bi bi-bookmark-x"></i> Marcados como spam
+        </a>
+        <a href="{{ url_for('detalhes_conta_principal', id=conta.conta_principal_id) }}" class="btn btn-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">{{ conta.nome }}</h5>
+    </div>
+    <div class="card-body">
+        <p><strong>Email origem:</strong> {{ conta.email }}</p>
+        <p class="mb-0 text-muted small">
+            Última sincronização. Na coluna <strong>Spam (filtro)</strong> aparece o motivo + <code>regra exacta</code> que bloqueou.
+            <span class="badge bg-warning text-dark"><i class="bi bi-person-x"></i> Remetente</span> = email/domínio bloqueado (mostra a regra abaixo) &nbsp;
+            <span class="badge text-white" style="background:#e07a00"><i class="bi bi-reply-fill"></i> Reply-To</span> = resposta vai para endereço diferente &nbsp;
+            <span class="badge text-white" style="background:#e07a00"><i class="bi bi-person-badge"></i> Nome forjado</span> = display name impersona entidade &nbsp;
+            <span class="badge text-white" style="background:#c05000"><i class="bi bi-123"></i> Dom. suspeito</span> = padrão numérico de spam &nbsp;
+            <span class="badge bg-warning text-dark"><i class="bi bi-chat-text"></i> Palavras</span> = palavra da wordlist encontrada no assunto &nbsp;
+            <span class="badge bg-secondary"><i class="bi bi-cpu"></i> Análise IA</span> = spam-analyzer.
+            Use <strong>Remover regra</strong> ou <strong>Whitelist</strong> se for um falso positivo.
+        </p>
+    </div>
+</div>
+
+{% if emails %}
+<div class="table-responsive emails-sync-table-wrapper">
+    <table class="table table-hover align-middle emails-sync-table">
+        <thead>
+            <tr>
+                <th style="width: 1%; white-space: nowrap;">Data do email</th>
+                <th>Remetente</th>
+                <th>Assunto</th>
+                <th>Sincronizado em</th>
+                <th>Spam (filtro)</th>
+                <th>Filtros</th>
+                <th>Spam</th>
+                <th style="min-width: 200px;">Ação</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in emails %}
+            <tr class="{{ 'table-danger' if e.marcado_spam else '' }}">
+                <td class="small text-nowrap text-muted" style="font-size: 0.8rem;">{{ (e.data_email or '')|formatar_data_email }}</td>
+                <td class="small">
+                    <span title="{{ e.remetente or '' }}">{{ (e.remetente or '-')[:50] }}{{ '…' if (e.remetente or '')|length > 50 else '' }}</span>
+                </td>
+                <td>
+                    <button class="btn btn-link btn-sm text-start p-0 border-0 btn-preview"
+                            data-id="{{ e.id }}" data-conta="{{ conta.id }}"
+                            title="Clique para pré-visualizar">
+                        {{ (e.assunto or '-')[:60] }}{{ '…' if (e.assunto or '')|length > 60 else '' }}
+                    </button>
+                </td>
+                <td class="small text-muted">{{ e.sincronizado_em.strftime('%d/%m/%Y %H:%M') if e.sincronizado_em else '-' }}</td>
+                <td>
+                    {% if e.detectado_spam_pelo_filtro %}
+                    {% set info = motivo_spam_por_id.get(e.id, {}) %}
+                    {% set motivo = info.motivo if info else '' %}
+                    {% set detalhe = info.detalhe if info else '' %}
+                    <div class="d-flex flex-column gap-1">
+                    {% if motivo == 'remetente' %}
+                    <span class="badge bg-warning text-dark"
+                          title="{% if detalhe %}Bloqueado pela regra: {{ detalhe }}{% else %}Remetente está na lista de bloqueados{% endif %}">
+                        <i class="bi bi-person-x"></i> Remetente
+                    </span>
+                    {% if detalhe %}
+                    <code class="small text-danger" title="Regra que bloqueou este remetente">{{ detalhe }}</code>
+                    {% endif %}
+                    {% elif motivo == 'reply_to' %}
+                    <span class="badge text-white" style="background:#e07a00"
+                          title="{% if detalhe %}Reply-To suspeito: {{ detalhe }}{% else %}Reply-To aponta para domínio diferente do From{% endif %}">
+                        <i class="bi bi-reply-fill"></i> Reply-To
+                    </span>
+                    {% if detalhe %}
+                    <code class="small text-warning" title="Endereço Reply-To suspeito">{{ detalhe[:60] }}{{ '…' if detalhe|length > 60 else '' }}</code>
+                    {% endif %}
+                    {% elif motivo == 'display_name' %}
+                    <span class="badge text-white" style="background:#e07a00"
+                          title="{% if detalhe %}Nome forjado: {{ detalhe }}{% else %}Nome de exibição impersona entidade institucional{% endif %}">
+                        <i class="bi bi-person-badge"></i> Nome forjado
+                    </span>
+                    {% if detalhe %}
+                    <code class="small text-warning" title="Nome que disparou a detecção">{{ detalhe }}</code>
+                    {% endif %}
+                    {% elif motivo == 'dominio_numerico' %}
+                    <span class="badge text-white" style="background:#c05000"
+                          title="{% if detalhe %}Endereço suspeito: {{ detalhe }}{% else %}Domínio/usuário com padrão numérico típico de spam{% endif %}">
+                        <i class="bi bi-123"></i> Dom. suspeito
+                    </span>
+                    {% if detalhe %}
+                    <code class="small" style="color:#c05000" title="Endereço que ativou a heurística">{{ detalhe[:60] }}{{ '…' if detalhe|length > 60 else '' }}</code>
+                    {% endif %}
+                    {% elif motivo == 'wordlist' %}
+                    <span class="badge bg-warning text-dark"
+                          title="{% if detalhe %}Palavra/frase encontrada no assunto: {{ detalhe }}{% else %}Assunto contém palavra da lista de spam{% endif %}">
+                        <i class="bi bi-chat-text"></i> Palavras
+                    </span>
+                    {% if detalhe %}
+                    <code class="small text-danger" title="Palavra/frase que correspondeu no assunto">{{ detalhe }}</code>
+                    {% endif %}
+                    {% elif motivo == 'analyzer' %}
+                    <span class="badge bg-secondary" title="Análise automática pelo pacote spam-analyzer">
+                        <i class="bi bi-cpu"></i> Análise IA
+                    </span>
+                    {% elif motivo == 'conteudo' %}
+                    <span class="badge bg-warning text-dark" title="Spam detetado (emails antigos sem detalhe de motivo)">
+                        <i class="bi bi-chat-text"></i> Conteúdo
+                    </span>
+                    {% else %}
+                    <span class="badge bg-warning text-dark" title="Spam Analyzer classificou como spam">
+                        <i class="bi bi-shield-exclamation"></i> Spam
+                    </span>
+                    {% endif %}
+                    </div>
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if e.aplicado_filtro_email %}
+                    {% set filtros_email = filtros_por_email.get(e.message_id, []) %}
+                    {% if filtros_email %}
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-info dropdown-toggle py-0 px-1" type="button" id="filtros-{{ e.id }}" data-bs-toggle="dropdown" aria-expanded="false" title="Clique para ver qual filtro foi aplicado">
+                            <i class="bi bi-funnel"></i> {{ filtros_email|length }} filtro{{ 's' if filtros_email|length != 1 else '' }}
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="filtros-{{ e.id }}">
+                            {% for f in filtros_email %}
+                            <li><a class="dropdown-item" href="{{ url_for('editar_filtro', id=f.id) }}">{{ f.nome }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% else %}
+                    <span class="badge bg-info" title="Filtro global ou específico aplicado (dados antigos)"><i class="bi bi-funnel"></i></span>
+                    {% endif %}
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if e.marcado_spam %}
+                    <span class="badge bg-danger"><i class="bi bi-shield-exclamation"></i> Spam</span>
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="d-flex flex-nowrap gap-1" id="acoes-{{ e.id }}">
+                        {% if e.marcado_spam %}
+                        <button class="btn btn-sm btn-outline-secondary btn-spam-action" title="Desmarcar spam"
+                                data-action="{{ url_for('desmarcar_email_historico_spam', conta_origem_id=conta.id, historico_id=e.id) }}"
+                                data-tipo="desmarcar">
+                            <i class="bi bi-shield"></i>
+                        </button>
+                        {% else %}
+                        <button class="btn btn-sm btn-outline-danger btn-spam-action" title="Marcar como spam"
+                                data-action="{{ url_for('marcar_email_historico_spam', conta_origem_id=conta.id, historico_id=e.id) }}"
+                                data-tipo="marcar">
+                            <i class="bi bi-shield-exclamation"></i> Spam
+                        </button>
+                        {% endif %}
+                        {% if e.detectado_spam_pelo_filtro %}
+                        {% set info_btn = motivo_spam_por_id.get(e.id, {}) %}
+                        {% set motivo_btn = info_btn.motivo if info_btn else '' %}
+                        {% set detalhe_btn = info_btn.detalhe if info_btn else '' %}
+                        {% if motivo_btn == 'remetente' and detalhe_btn %}
+                        <button class="btn btn-sm btn-outline-warning btn-spam-action"
+                                title="Remover regra '{{ detalhe_btn }}' e adicionar remetente à whitelist"
+                                data-action="{{ url_for('remover_do_filtro_spam_route', conta_origem_id=conta.id, historico_id=e.id) }}"
+                                data-tipo="remover-filtro">
+                            <i class="bi bi-funnel-fill"></i> Remover regra <code class="ms-1">{{ detalhe_btn }}</code>
+                        </button>
+                        {% elif motivo_btn in ('reply_to', 'display_name', 'dominio_numerico', 'wordlist', 'analyzer', 'conteudo') %}
+                        <button class="btn btn-sm btn-outline-warning btn-spam-action"
+                                title="Adicionar remetente à whitelist para ignorar esta deteção no futuro"
+                                data-action="{{ url_for('remover_do_filtro_spam_route', conta_origem_id=conta.id, historico_id=e.id) }}"
+                                data-tipo="remover-filtro">
+                            <i class="bi bi-funnel"></i> Ignorar deteção
+                        </button>
+                        {% else %}
+                        <button class="btn btn-sm btn-outline-warning btn-spam-action" title="Remover este remetente do filtro de spam"
+                                data-action="{{ url_for('remover_do_filtro_spam_route', conta_origem_id=conta.id, historico_id=e.id) }}"
+                                data-tipo="remover-filtro">
+                            <i class="bi bi-funnel"></i> Remover do filtro
+                        </button>
+                        {% endif %}
+                        {% endif %}
+                        <button class="btn btn-sm btn-outline-success btn-spam-action" title="Adicionar remetente à whitelist permanente"
+                                data-action="{{ url_for('adicionar_remetente_whitelist_route', conta_origem_id=conta.id, historico_id=e.id) }}"
+                                data-tipo="whitelist">
+                            <i class="bi bi-shield-check"></i> Whitelist
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<p class="small text-muted">Página {{ pagina }} — até 50 registros. Novos emails passam a mostrar assunto e remetente após a próxima sincronização.</p>
+{% if pagina > 1 or has_next %}
+<div class="mt-2">
+    {% if pagina > 1 %}
+    <a href="{{ url_for('emails_sincronizados', conta_origem_id=conta.id, pagina=pagina-1, spam=1 if apenas_spam else None, filtro_spam=1 if apenas_detectados_pelo_filtro else None, filtros_email=1 if apenas_filtros_email else None) }}" class="btn btn-sm btn-outline-primary">
+        <i class="bi bi-chevron-left"></i> Anterior
+    </a>
+    {% endif %}
+    {% if has_next %}
+    <a href="{{ url_for('emails_sincronizados', conta_origem_id=conta.id, pagina=pagina+1, spam=1 if apenas_spam else None, filtro_spam=1 if apenas_detectados_pelo_filtro else None, filtros_email=1 if apenas_filtros_email else None) }}" class="btn btn-sm btn-outline-primary">
+        Próxima <i class="bi bi-chevron-right"></i>
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    {% if apenas_spam %}
+    Nenhum email marcado como spam ainda. Marque na lista "Todos".
+    {% elif apenas_detectados_pelo_filtro %}
+    Nenhum email foi classificado como spam pelo Spam Analyzer na última sincronização. Sincronize com o filtro de spam ativo para ver aqui os que caírem no filtro.
+    {% elif apenas_filtros_email %}
+    Nenhum email bateu em filtros globais ou específicos na última sincronização. Crie filtros em Filtros globais ou nos filtros da conta e sincronize.
+    {% else %}
+    Nenhum email no histórico desta conta ou os registros ainda não têm assunto/remetente (sincronize novamente para preencher).
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{{ url_for('detalhes_conta_principal', id=conta.conta_principal_id) }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar à conta
+    </a>
+</div>
+
+<!-- Modal de pré-visualização de email -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewModalLabel">
+                    <i class="bi bi-envelope-open"></i> Pré-visualização
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="previewModalBody">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast de feedback (precisa ficar dentro do content para o Jinja renderizar) -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+    <div id="spam-toast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="spam-toast-msg"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+<script>
+// Modal de pré-visualização
+(function () {
+    const modal     = new bootstrap.Modal(document.getElementById('previewModal'));
+    const modalBody = document.getElementById('previewModalBody');
+    const modalTitle = document.getElementById('previewModalLabel');
+
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.btn-preview');
+        if (!btn) return;
+        const emailId = btn.dataset.id;
+        const contaId = btn.dataset.conta;
+        modalTitle.innerHTML = '<i class="bi bi-envelope-open"></i> Carregando…';
+        modalBody.innerHTML  = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+        modal.show();
+
+        fetch(`/conta-origem/${contaId}/email-histórico/${emailId}/preview`)
+            .then(r => r.json())
+            .then(function (data) {
+                if (data.error) { modalBody.innerHTML = `<div class="alert alert-danger">${data.error}</div>`; return; }
+                modalTitle.innerHTML = `<i class="bi bi-envelope-open"></i> ${data.assunto || '(sem assunto)'}`;
+                modalBody.innerHTML = `
+                    <table class="table table-sm">
+                        <tr><th style="width:130px">De</th><td>${escHtml(data.remetente)}</td></tr>
+                        <tr><th>Data do email</th><td>${escHtml(data.data_email)}</td></tr>
+                        <tr><th>Sincronizado em</th><td>${escHtml(data.sincronizado_em)}</td></tr>
+                        <tr><th>Assunto</th><td>${escHtml(data.assunto)}</td></tr>
+                        <tr><th>Spam (filtro)</th><td>${data.spam_filtro
+                            ? `<span class="badge bg-warning text-dark">Sim — ${escHtml(data.spam_motivo)}</span>${data.spam_detalhe ? ` <code class="text-danger">${escHtml(data.spam_detalhe)}</code>` : ''}`
+                            : '<span class="text-muted">Não</span>'}</td></tr>
+                        <tr><th>Marcado spam</th><td>${data.marcado_spam
+                            ? '<span class="badge bg-danger">Sim</span>'
+                            : '<span class="text-muted">Não</span>'}</td></tr>
+                    </table>`;
+            })
+            .catch(function () {
+                modalBody.innerHTML = '<div class="alert alert-danger">Erro ao carregar pré-visualização.</div>';
+            });
+    });
+
+    function escHtml(s) {
+        return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+})();
+
+(function () {
+    const toastEl = document.getElementById('spam-toast');
+    const toastMsg = document.getElementById('spam-toast-msg');
+    const bsToast = new bootstrap.Toast(toastEl, { delay: 3500 });
+
+    function showToast(msg, tipo) {
+        toastEl.className = 'toast align-items-center border-0 text-white bg-' + (tipo === 'erro' ? 'danger' : 'success');
+        toastMsg.textContent = msg;
+        bsToast.show();
+    }
+
+    function spamCellIdx(row) {
+        return row.cells.length === 8 ? 6 : 7;
+    }
+
+    function filtroCellIdx(row) {
+        return row.cells.length === 8 ? 4 : 5;
+    }
+
+    function atualizarLinha(btn, tipo) {
+        const row = btn.closest('tr');
+
+        if (tipo === 'marcar') {
+            row.classList.add('table-danger');
+            btn.className = 'btn btn-sm btn-outline-secondary btn-spam-action';
+            btn.title = 'Desmarcar spam';
+            btn.dataset.action = btn.dataset.action.replace('marcar-spam', 'desmarcar-spam');
+            btn.dataset.tipo = 'desmarcar';
+            btn.innerHTML = '<i class="bi bi-shield"></i>';
+            const c = row.cells[spamCellIdx(row)];
+            if (c) c.innerHTML = '<span class="badge bg-danger"><i class="bi bi-shield-exclamation"></i> Spam</span>';
+        } else if (tipo === 'desmarcar') {
+            row.classList.remove('table-danger');
+            btn.className = 'btn btn-sm btn-outline-danger btn-spam-action';
+            btn.title = 'Marcar como spam';
+            btn.dataset.action = btn.dataset.action.replace('desmarcar-spam', 'marcar-spam');
+            btn.dataset.tipo = 'marcar';
+            btn.innerHTML = '<i class="bi bi-shield-exclamation"></i> Spam';
+            const c = row.cells[spamCellIdx(row)];
+            if (c) c.innerHTML = '<span class="text-muted">-</span>';
+        } else if (tipo === 'remover-filtro') {
+            btn.remove();
+            const c = row.cells[filtroCellIdx(row)];
+            if (c) c.innerHTML = '<span class="text-muted">-</span>';
+        } else if (tipo === 'whitelist') {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-shield-check"></i> ✓';
+            btn.title = 'Já na whitelist';
+        }
+    }
+
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.btn-spam-action');
+        if (!btn) return;
+        e.preventDefault();
+
+        const url = btn.dataset.action;
+        const tipo = btn.dataset.tipo;
+        if (!url) return;
+
+        btn.disabled = true;
+        const original = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        fetch(url, { method: 'POST', headers: { 'X-Requested-With': 'fetch' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.ok) {
+                    atualizarLinha(btn, tipo);
+                    showToast(data.message || 'Feito!', 'sucesso');
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = original;
+                    showToast(data.message || 'Erro ao processar.', 'erro');
+                }
+            })
+            .catch(function () {
+                btn.disabled = false;
+                btn.innerHTML = original;
+                showToast('Erro de comunicação com o servidor.', 'erro');
+            });
+    });
+})();
+</script>
+{% endblock %}

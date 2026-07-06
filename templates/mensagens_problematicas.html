@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Mensagens problemáticas - {{ conta.nome }} - ImapSync Manager{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+<style>
+    .erro-msg { max-width: 320px; white-space: normal; font-size: 0.8rem; }
+    .badge-toobig { background: #c0392b; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-exclamation-triangle text-warning"></i> Mensagens problemáticas
+    </h1>
+    <div class="btn-toolbar gap-2 flex-wrap">
+        <a href="{{ url_for('logs_sincronizacao', conta_origem_id=conta.id) }}" class="btn btn-sm btn-outline-info">
+            <i class="bi bi-file-text"></i> Logs
+        </a>
+        <a href="{{ url_for('detalhes_conta_principal', id=conta.conta_principal_id) }}" class="btn btn-sm btn-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-warning">
+    <i class="bi bi-info-circle"></i>
+    Mensagens que <strong>falharam na sincronização</strong> ficam presas na origem porque o sistema não as apaga
+    automaticamente (proteção contra perda de dados). Selecione as que não precisa mais e use
+    <strong>Excluir selecionadas na origem</strong> — elas <em>não estão no Gmail</em>.
+</div>
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h5 class="mb-0">{{ conta.nome }} <small class="text-muted">({{ conta.email }})</small></h5>
+        <button type="button" class="btn btn-sm btn-danger" id="btnExcluirSelecionadas" disabled>
+            <i class="bi bi-trash"></i> Excluir selecionadas na origem
+        </button>
+    </div>
+    <div class="card-body">
+        {% if log_id %}
+        <p class="small text-muted mb-3">Filtrando erros do log #{{ log_id }}.
+            <a href="{{ url_for('mensagens_problematicas', conta_origem_id=conta.id) }}">Ver todos</a>
+        </p>
+        {% endif %}
+
+        {% if erros %}
+        <div class="table-responsive">
+            <table id="errosTable" class="table table-hover align-middle" style="width:100%">
+                <thead>
+                    <tr>
+                        <th style="width:1%"><input type="checkbox" id="checkAll" title="Selecionar todos"></th>
+                        <th>UID</th>
+                        <th>Remetente</th>
+                        <th>Assunto</th>
+                        <th>Erro</th>
+                        <th>Tentativas</th>
+                        <th>Último erro</th>
+                        <th>Exclusão</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in erros %}
+                    <tr class="{{ 'table-warning' if e.exclusao_status == 'pendente' else '' }}">
+                        <td>
+                            <input type="checkbox" class="chk-uid" value="{{ e.uid_origem }}"
+                                   data-erro-id="{{ e.id }}">
+                        </td>
+                        <td><code>{{ e.uid_origem }}</code></td>
+                        <td class="small">{{ e.remetente or '—' }}</td>
+                        <td class="small">{{ e.assunto or '(sem assunto)' }}</td>
+                        <td class="erro-msg">
+                            {% if e.erro_codigo == 'TOOBIG' %}
+                            <span class="badge badge-toobig">Muito grande</span>
+                            {% elif e.erro_codigo %}
+                            <span class="badge bg-secondary">{{ e.erro_codigo }}</span>
+                            {% endif %}
+                            <span class="text-muted">{{ (e.erro_mensagem or '')[:200] }}</span>
+                        </td>
+                        <td><span class="badge bg-dark">{{ e.tentativas }}</span></td>
+                        <td class="small text-nowrap text-muted">
+                            {{ e.ultimo_erro_em.strftime('%d/%m/%Y %H:%M') if e.ultimo_erro_em else '—' }}
+                        </td>
+                        <td>
+                            {% if e.exclusao_status == 'pendente' %}
+                            <span class="badge bg-warning text-dark">Marcada</span>
+                            {% elif e.exclusao_status == 'excluida' %}
+                            <span class="badge bg-success">Excluída</span>
+                            {% elif e.exclusao_status == 'falhou' %}
+                            <span class="badge bg-danger">Falhou</span>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-check-circle"></i> Nenhuma mensagem com erro registrada
+            {% if log_id %} neste log{% endif %}.
+            Os erros passam a aparecer aqui após a próxima sincronização com falhas.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+<script>
+(function () {
+    const contaId = {{ conta.id }};
+
+    function toast(msg, type) {
+        const el = document.createElement('div');
+        el.className = 'toast align-items-center text-bg-' + (type || 'primary') + ' border-0';
+        el.setAttribute('role', 'alert');
+        el.innerHTML = '<div class="d-flex"><div class="toast-body">' + msg + '</div>'
+            + '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>';
+        document.getElementById('toastContainer').appendChild(el);
+        new bootstrap.Toast(el, { delay: 5000 }).show();
+    }
+
+    function uidsSelecionados() {
+        return Array.from(document.querySelectorAll('.chk-uid:checked')).map(c => c.value);
+    }
+
+    function atualizarBotoes() {
+        const n = uidsSelecionados().length;
+        const btn = document.getElementById('btnExcluirSelecionadas');
+        if (btn) btn.disabled = n === 0;
+    }
+
+    document.getElementById('checkAll')?.addEventListener('change', function () {
+        document.querySelectorAll('.chk-uid').forEach(c => { c.checked = this.checked; });
+        atualizarBotoes();
+    });
+    document.querySelectorAll('.chk-uid').forEach(c => c.addEventListener('change', atualizarBotoes));
+
+    document.getElementById('btnExcluirSelecionadas')?.addEventListener('click', function () {
+        const uids = uidsSelecionados();
+        if (!uids.length) return;
+        if (!confirm(
+            'Excluir permanentemente ' + uids.length + ' mensagem(ns) na origem?\n\n'
+            + 'Elas NÃO estão no Gmail. Esta ação não pode ser desfeita.'
+        )) return;
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Excluindo…';
+        fetch(`/conta-origem/${contaId}/mensagens-exclusao/excluir`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ uids }),
+        })
+            .then(r => r.json())
+            .then(data => {
+                toast(data.message || 'OK', data.ok ? 'success' : 'danger');
+                setTimeout(() => location.reload(), 1200);
+            })
+            .catch(() => {
+                toast('Erro de rede', 'danger');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-trash"></i> Excluir selecionadas na origem';
+            });
+    });
+
+    {% if erros %}
+    $('#errosTable').DataTable({
+        order: [[6, 'desc']],
+        pageLength: 25,
+        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-BR.json' },
+        columnDefs: [
+            { targets: [0, 7], orderable: false },
+        ],
+    });
+    {% endif %}
+})();
+</script>
+{% endblock %}

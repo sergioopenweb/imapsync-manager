@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Importar Filtros do Gmail - {{ conta.nome }} - MailBridge{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-9">
+        <h2 class="mb-4">
+            <i class="bi bi-cloud-download"></i> Importar Filtros do Gmail
+        </h2>
+
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            <strong>Como exportar no Gmail:</strong> Configurações → Ver todas as configurações → Filtros e endereços bloqueados →
+            exportar filtros. Envie o arquivo XML aqui.<br>
+            <strong>Não gera duplicatas:</strong> filtros já importados (mesmo ID Gmail) e regras equivalentes a filtros que você já criou manualmente são ignorados e informados no resultado.
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-4">
+                        <label for="arquivo_xml" class="form-label">
+                            <i class="bi bi-file-earmark-code"></i> Arquivo XML do Gmail
+                        </label>
+                        <input type="file" class="form-control" id="arquivo_xml" name="arquivo_xml"
+                               accept=".xml,.xml.gz">
+                        <div class="form-text">Arquivo exportado em Gmail (Configurações → Filtros → Exportar)</div>
+                    </div>
+                    <p class="text-muted small mb-2">— ou cole o conteúdo do XML abaixo —</p>
+                    <div class="mb-4">
+                        <label for="xml_texto" class="form-label">Conteúdo do XML</label>
+                        <textarea class="form-control font-monospace" id="xml_texto" name="xml_texto" rows="12"
+                                  placeholder="Cole aqui o conteúdo do arquivo mailFilters.xml exportado do Gmail..."></textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-upload"></i> Importar
+                        </button>
+                        <a href="{{ url_for('filtros_globais', conta_principal_id=conta.id) }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

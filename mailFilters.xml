@@ -1,0 +1,833 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns='http://www.w3.org/2005/Atom' xmlns:apps='http://schemas.google.com/apps/2006'>
+	<title>Mail Filters</title>
+	<id>tag:mail.google.com,2008:filters:1262606844520,1262606869853,1262715383063,1262715722820,1262715963447,1262716205658,1262716549686,1263395032607,1263813871513,1268238131014,1273694986272,1273784553657,1277831723670,1280923925163,1281536514958,1282070565401,1290778393012,1294328065925,1295006496762,1295006945188,1295025826873,1295263475427,1296139686862,1315278828831,1317042755078,1351000110996,1366981941979,1383132718490,1406228850214,1406230652167,1415794480188,1415794480189,1422271052177,1422448775111,1422448845969,1422448887123,1422448947800,1422448979353,1422643107252,1426856552314,1426856683031,1426856756167,1429118485524,1429118499898,1429118499899,1429118520297,1430396732084,1430396737807,1430396741482,1430396772548,1430396805080,1430396810615,1430398193482,1444418633570,1496147662309,1506515343247,1521168844430,7692610316327939799,z0000001558556326777*1493443649934816158,z0000001558614083017*7491432585944572663,z0000001558617358963*8050216057730213932,z0000001573587047338*3640122395758830770,z0000001577966926524*6988605645562042513,z0000001604923521321*4121325911305628889,z0000001641211450879*6549661840738305967,z0000001641211534786*4296261877034124581,z0000001668081924130*7679203246918602017,z0000001677154055068*8768788033525548420,z0000001677154835437*5809150707550738778,z0000001677155475751*5179296644297599962,z0000001704390408692*3465735658843225710,z0000001711023207821*0613920817157800802,z0000001755707633599*1119003120741095092</id>
+	<updated>2026-02-11T20:46:01Z</updated>
+	<author>
+		<name>Sergio Paz</name>
+		<email>sergioopenweb@gmail.com</email>
+	</author>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1262606844520</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='plesk@openweb.com.br'/>
+		<apps:property name='subject' value='Backup Banco LOCARE'/>
+		<apps:property name='label' value='SysBackup'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1262606869853</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='SysBackup ::'/>
+		<apps:property name='doesNotHaveTheWord' value='Facilitta or &quot;Plesk 8&quot;'/>
+		<apps:property name='label' value='SysBackup'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1262715383063</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='DenyHosts Report'/>
+		<apps:property name='label' value='DenyHosts'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1262715722820</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='Logwatch for pro'/>
+		<apps:property name='label' value='LogWatch'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1262715963447</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='LogWatch Report'/>
+		<apps:property name='label' value='LogWatch'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1262716205658</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='SysBackup :: Facilitta'/>
+		<apps:property name='label' value='SysBackup/Facilitta'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1262716549686</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='pagamento@registro.br'/>
+		<apps:property name='label' value='RegistroBR'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1263395032607</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='Hostmaster@registro.br'/>
+		<apps:property name='label' value='RegistroBR'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1263813871513</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='Logwatch for servidor'/>
+		<apps:property name='label' value='LogWatch'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1268238131014</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='plesk@openweb.com.br'/>
+		<apps:property name='subject' value='SysBackup :: Imob Menino Deus'/>
+		<apps:property name='label' value='SysBackup'/>
+		<apps:property name='shouldArchive' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1273694986272</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='renewal@directnic.com'/>
+		<apps:property name='subject' value='directNIC Warning: your expired services for username:'/>
+		<apps:property name='label' value='RegistroBR'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldArchive' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1273784553657</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='billing@directnic.com'/>
+		<apps:property name='subject' value='Your Order From directNIC'/>
+		<apps:property name='label' value='RegistroBR'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldArchive' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1277831723670</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='renewal@directnic.com'/>
+		<apps:property name='label' value='RegistroBR'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1280923925163</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='Mensagem deixada no servidor:'/>
+		<apps:property name='shouldTrash' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1281536514958</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='doesNotHaveTheWord' value='PROBLEM, RECOVERY, SysBackup, &quot;root login&quot;, &quot;Fila Qmail&quot;, &quot;Backup Banco&quot;, &quot;LogWatch&quot;,  &quot;AVG Report&quot;, &quot;DenyHosts&quot;, &quot;Host DOWN&quot;, &quot;Host UP&quot;  &quot;registro@openweb.com.br&quot; &quot;renewal@directnic.com&quot;, jpleal, &quot;Politica Para Politicos&quot;'/>
+		<apps:property name='label' value='!!! Arquivo !!!'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1282070565401</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='nagios@noc.openweb.com.br'/>
+		<apps:property name='subject' value='Politica Para Politicos'/>
+		<apps:property name='label' value='PPP'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1290778393012</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='Plesk 13 :: Backup RSYNC'/>
+		<apps:property name='label' value='SysBackup'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1294328065925</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='Internet :: Teletoner'/>
+		<apps:property name='label' value='Teletoner/Internet'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1295006496762</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='to' value='sergio@studiogt.com.br'/>
+		<apps:property name='label' value='-- STUDIOGT --'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1295006945188</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='to' value='sergio@ibased.com.br'/>
+		<apps:property name='label' value='-- IBASED --'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1295025826873</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='to' value='sergio@openweb.com.br'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1295263475427</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='backup@openweb.com.br'/>
+		<apps:property name='subject' value='Backup Timesheet'/>
+		<apps:property name='label' value='Filippon'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1296139686862</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='Fila Qmail || Fila Email'/>
+		<apps:property name='label' value='Fila Qmail'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1315278828831</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='root login'/>
+		<apps:property name='label' value='Login'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1317042755078</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='AVG Report'/>
+		<apps:property name='doesNotHaveTheWord' value='&quot;PLESK 11&quot; &quot;PLESK 12&quot; &quot;Teletoner&quot; &quot;PLESK 17&quot;'/>
+		<apps:property name='label' value='Avast'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1351000110996</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='Orçamento Site Locare'/>
+		<apps:property name='label' value='Locare'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1366981941979</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='Aprovação da Assinatura'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1383132718490</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='AVG Report :: Teletoner'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1406228850214</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='Fail2Ban'/>
+		<apps:property name='label' value='Fail2Ban'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1406230652167</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='[Fail2Ban] ProFTPD: banned'/>
+		<apps:property name='label' value='Fail2Ban'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1415794480188</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='SysBackup :: Plesk 8'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1415794480189</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='Plesk 8 :: Backup RSYNC'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1422271052177</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='support@idrive.com'/>
+		<apps:property name='label' value='Idrive'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1422448775111</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='support@idrive.com'/>
+		<apps:property name='hasTheWord' value='ContatoSeguro'/>
+		<apps:property name='label' value='Idrive/Contato Seguro'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1422448845969</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='support@idrive.com'/>
+		<apps:property name='hasTheWord' value='ImpertecPoa'/>
+		<apps:property name='label' value='Idrive/ImpertecPoa'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1422448887123</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='support@idrive.com'/>
+		<apps:property name='hasTheWord' value='MeninoDeus'/>
+		<apps:property name='label' value='Idrive/Menino Deus'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1422448947800</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='support@idrive.com'/>
+		<apps:property name='hasTheWord' value='RS'/>
+		<apps:property name='label' value='Idrive/Impertec Loja'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1422448979353</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='support@idrive.com'/>
+		<apps:property name='hasTheWord' value='Dimovel'/>
+		<apps:property name='label' value='Idrive/Dimovel'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1422643107252</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='chat@verabernardes.com.br OR chat2@verabernardes.com.br'/>
+		<apps:property name='subject' value='Atendimento finalizado'/>
+		<apps:property name='label' value='Vera Bernardes'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1426856552314</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='support@idrive.com'/>
+		<apps:property name='hasTheWord' value='Pedrini'/>
+		<apps:property name='label' value='Idrive/Pedrini'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1426856683031</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='support@idrive.com'/>
+		<apps:property name='hasTheWord' value='PortoSol'/>
+		<apps:property name='label' value='Idrive/PortoSol'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1426856756167</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='support@idrive.com'/>
+		<apps:property name='hasTheWord' value='DinMar'/>
+		<apps:property name='label' value='Idrive/DinMar'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1429118485524</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='nagios@noc.openweb.com.br'/>
+		<apps:property name='subject' value='RECOVERY'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1429118499898</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='nagios@noc.openweb.com.br'/>
+		<apps:property name='subject' value='PROBLEM'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1429118499899</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='nagios@noc2.openweb.com.br'/>
+		<apps:property name='subject' value='PROBLEM Service Alert:'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1429118520297</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='nagios@noc.openweb.com.br'/>
+		<apps:property name='subject' value='Host'/>
+		<apps:property name='hasTheWord' value='DOWN OR UP'/>
+		<apps:property name='shouldMarkAsRead' value='true'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1430396732084</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='plesk@openweb.com.br'/>
+		<apps:property name='subject' value='&quot;AVG Report :: PLESK 17&quot;'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1430396737807</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='plesk@openweb.com.br'/>
+		<apps:property name='subject' value='&quot;AVG Report :: PLESK 16&quot;'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1430396741482</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='plesk@openweb.com.br'/>
+		<apps:property name='subject' value='&quot;AVG Report :: PLESK 13&quot;'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1430396772548</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='AVG Report :: PLESK 12'/>
+		<apps:property name='doesNotHaveTheWord' value='&quot;PLESK 11&quot; &quot;PLESK 10&quot; &quot;PLESK 5&quot; &quot;PLESK 6&quot; &quot;PLESK 7&quot; &quot;PLESK 8&quot; &quot;PLESK 1&quot; &quot;PLESK 3&quot;'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1430396805080</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='&quot;AVG Report :: PLESK 11&quot;'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1430396810615</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='plesk@openweb.com.br'/>
+		<apps:property name='subject' value='AVG Report :: PLESK 19'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1430398193482</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='plesk@openweb.com.br'/>
+		<apps:property name='hasTheWord' value='&quot;Notification of problem domains&quot;'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1444418633570</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='rsync :: JPLEAL'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1496147662309</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='plesk@openweb.com.br'/>
+		<apps:property name='subject' value='&quot;AVG Report :: PLESK 14&quot;'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1506515343247</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='support@idrive.com'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:1521168844430</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='laneylangaro@mappingpropaganda.com'/>
+		<apps:property name='subject' value='Newsletter Laney Langaro'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:7692610316327939799</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='abuse@servers.com'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:z0000001558556326777*1493443649934816158</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='openweb login Drop StudioGT'/>
+		<apps:property name='label' value='Login'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:z0000001558614083017*7491432585944572663</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='root login'/>
+		<apps:property name='label' value='Login'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:z0000001558617358963*8050216057730213932</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='Scheduled Backup Status Report'/>
+		<apps:property name='label' value='Idrive'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:z0000001573587047338*3640122395758830770</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='Logwatch for'/>
+		<apps:property name='label' value='LogWatch'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:z0000001577966926524*6988605645562042513</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='Backup RSYNC'/>
+		<apps:property name='label' value='SysBackup'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:z0000001604923521321*4121325911305628889</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='watchdog@'/>
+		<apps:property name='label' value='Watchdog'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:z0000001641211450879*6549661840738305967</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='zabbix@openweb.com.br'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:z0000001641211534786*4296261877034124581</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='zabbix@openweb.com.br'/>
+		<apps:property name='label' value='Zabbix'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:z0000001668081924130*7679203246918602017</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='no-reply@idrive.com'/>
+		<apps:property name='hasTheWord' value='SRV2008NEW'/>
+		<apps:property name='label' value='Idrive/ImpertecPoa'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:z0000001677154055068*8768788033525548420</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='info@openweb.com.br'/>
+		<apps:property name='subject' value='openwebhost'/>
+		<apps:property name='hasTheWord' value='label:inbox'/>
+		<apps:property name='label' value='Plesk'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:z0000001677154835437*5809150707550738778</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='noreply@server4you.com'/>
+		<apps:property name='label' value='Server4You'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:z0000001677155475751*5179296644297599962</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='to' value='info@openweb.com.br'/>
+		<apps:property name='subject' value='maldet alert from'/>
+		<apps:property name='label' value='Maldetect'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:z0000001704390408692*3465735658843225710</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='lebes@auditaestoque.com.br'/>
+		<apps:property name='label' value='LEBES'/>
+		<apps:property name='shouldArchive' value='true'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:z0000001711023207821*0613920817157800802</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='from' value='no-reply@backupstatus.idrive.com'/>
+		<apps:property name='subject' value='Backup Report'/>
+		<apps:property name='label' value='Idrive'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+	<entry>
+		<category term='filter'></category>
+		<title>Mail Filter</title>
+		<id>tag:mail.google.com,2008:filter:z0000001755707633599*1119003120741095092</id>
+		<updated>2026-02-11T20:46:01Z</updated>
+		<content></content>
+		<apps:property name='subject' value='Imunify has detected malware'/>
+		<apps:property name='shouldNeverSpam' value='true'/>
+		<apps:property name='sizeOperator' value='s_sl'/>
+		<apps:property name='sizeUnit' value='s_smb'/>
+	</entry>
+</feed>

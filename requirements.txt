@@ -1,0 +1,6 @@
+Flask==3.0.3
+Werkzeug==3.0.3
+python-dotenv==1.0.1
+mysql-connector-python>=8.0.0
+gunicorn>=21.2.0
+spam-analyzer>=1.0.11

@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}{{ conta.nome }} - MailBridge{% endblock %}
+
+{% block content %}
+<div class="pb-2 mb-3 border-bottom">
+    <!-- Título e status -->
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+        <h1 class="h2 me-auto mb-0">
+            <i class="bi bi-inbox-fill text-primary"></i> {{ conta.nome }}
+        </h1>
+        <span class="badge fs-6 bg-{{ 'success' if conta.ativa|default(1) else 'secondary' }}">
+            <i class="bi bi-{{ 'check-circle' if conta.ativa|default(1) else 'pause-circle' }}"></i>
+            {{ 'Ativa' if conta.ativa|default(1) else 'Inativa' }}
+        </span>
+    </div>
+    <!-- Barra de ações -->
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+        <a href="{{ url_for('adicionar_conta_origem', conta_principal_id=conta.id) }}" class="btn btn-sm btn-success">
+            <i class="bi bi-plus-circle"></i> Adicionar origem
+        </a>
+        <a href="{{ url_for('filtros_globais', conta_principal_id=conta.id) }}" class="btn btn-sm btn-primary">
+            <i class="bi bi-funnel-fill"></i> Filtros
+        </a>
+        <a href="{{ url_for('spam_analyzer', conta_principal_id=conta.id) }}" class="btn btn-sm btn-warning">
+            <i class="bi bi-shield-exclamation"></i> Spam Analyzer
+        </a>
+        <a href="{{ url_for('emails_sincronizados_conta_principal', conta_principal_id=conta.id) }}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-envelope-check"></i> Emails sincronizados
+        </a>
+        <div class="ms-auto d-flex gap-1">
+            <button type="button"
+                    class="btn btn-sm btn-{{ 'outline-warning' if conta.ativa|default(1) else 'outline-success' }}"
+                    onclick="toggleContaPrincipal({{ conta.id }}, {{ conta.ativa|default(1)|tojson }})"
+                    title="{{ 'Desativar' if conta.ativa|default(1) else 'Ativar' }} conta principal">
+                <i class="bi bi-{{ 'pause-circle' if conta.ativa|default(1) else 'play-circle' }}"></i>
+                {{ 'Desativar' if conta.ativa|default(1) else 'Ativar' }}
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="deletarContaPrincipal({{ conta.id }})" title="Deletar conta">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Informações da conta principal -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Informações da Conta</h5></div>
+            <div class="card-body">
+                <p><strong>Email:</strong> {{ conta.email }}</p>
+                <p><strong>Servidor:</strong> {{ conta.servidor }}:{{ conta.porta }}</p>
+                <p>
+                    <strong>Segurança:</strong>
+                    {% if conta.ssl %}
+                    <span class="badge bg-success">SSL/TLS Ativo</span>
+                    {% else %}
+                    <span class="badge bg-warning">Sem SSL</span>
+                    {% endif %}
+                </p>
+                <p class="text-muted mb-0">
+                    <small>Criado em {{ conta.criado_em.strftime('%d/%m/%Y às %H:%M') }}</small>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card bg-info text-white">
+            <div class="card-header"><h5 class="mb-0">Contas de Origem</h5></div>
+            <div class="card-body" style="min-height:130px">
+                <h2>{{ contas_origem|length }}</h2>
+                <p class="mb-0">Total de contas configuradas para sincronização</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contas de origem -->
+<h3 class="mb-3">Contas de Origem</h3>
+
+{% if contas_origem %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Após sincronizar</th>
+                <th>Última Sync</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for origem in contas_origem %}
+            <tr>
+                <td><i class="bi bi-envelope"></i> {{ origem.nome }}</td>
+                <td>{{ origem.email }}</td>
+                <td>
+                    <span class="badge bg-{{ 'success' if origem.marcar_lido_origem else 'secondary' }} me-1">
+                        <i class="bi bi-check2-circle"></i>
+                        {{ 'Marca lido' if origem.marcar_lido_origem else 'Não marca' }}
+                    </span>
+                    {% if origem.dias_manter_origem > 0 %}
+                    <span class="badge bg-warning text-dark">
+                        <i class="bi bi-trash"></i> Deleta em {{ origem.dias_manter_origem }}d
+                    </span>
+                    {% else %}
+                    <span class="badge bg-light text-muted border">Não deleta</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if origem.ultima_sincronizacao %}
+                    {{ origem.ultima_sincronizacao.strftime('%d/%m/%Y %H:%M') }}
+                    {% else %}
+                    <span class="text-muted">Nunca</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge bg-{{ 'success' if origem.ativa else 'secondary' }}">
+                        {{ 'Ativa' if origem.ativa else 'Inativa' }}
+                    </span>
+                </td>
+                <td>
+                    <div class="d-flex flex-wrap gap-1">
+                        <button type="button" class="btn btn-sm btn-success"
+                                onclick="sincronizarAgora({{ origem.id }}, '{{ origem.nome }}')"
+                                title="Sincronizar agora">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </button>
+                        <a href="{{ url_for('emails_sincronizados', conta_origem_id=origem.id) }}"
+                           class="btn btn-sm btn-outline-primary" title="Emails sincronizados">
+                            <i class="bi bi-envelope-check"></i>
+                        </a>
+                        <a href="{{ url_for('filtros_conta', conta_origem_id=origem.id) }}"
+                           class="btn btn-sm btn-outline-secondary" title="Filtros desta conta">
+                            <i class="bi bi-funnel"></i>
+                        </a>
+                        <a href="{{ url_for('logs_sincronizacao', conta_origem_id=origem.id) }}"
+                           class="btn btn-sm btn-outline-info" title="Logs de sincronização">
+                            <i class="bi bi-file-text"></i>
+                        </a>
+                        <a href="{{ url_for('mensagens_problematicas', conta_origem_id=origem.id) }}"
+                           class="btn btn-sm btn-outline-warning position-relative" title="Mensagens com erro de sync">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            {% if erros_por_conta.get(origem.id, 0) > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ erros_por_conta[origem.id] }}
+                            </span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('editar_conta_origem', id=origem.id) }}"
+                           class="btn btn-sm btn-outline-warning" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <button type="button"
+                                class="btn btn-sm btn-{{ 'outline-danger' if origem.ativa else 'outline-success' }}"
+                                onclick="toggleConta({{ origem.id }}, {{ origem.ativa|tojson }})"
+                                title="{{ 'Desativar' if origem.ativa else 'Ativar' }}">
+                            <i class="bi bi-{{ 'pause' if origem.ativa else 'play' }}"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> Nenhuma conta de origem configurada ainda.
+    <a href="{{ url_for('adicionar_conta_origem', conta_principal_id=conta.id) }}" class="alert-link">
+        Clique aqui para adicionar
+    </a>.
+</div>
+{% endif %}
+
+<!-- Toast de feedback para sincronização manual -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="syncToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="bi bi-arrow-repeat text-success me-2"></i>
+            <strong class="me-auto">Sincronização</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="syncToastBody"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function sincronizarAgora(id, nome) {
+    if (!confirm(`Iniciar sincronização manual para "${nome}"?`)) return;
+
+    fetch(`/conta-origem/${id}/sincronizar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        const body = document.getElementById('syncToastBody');
+        body.textContent = data.message;
+        const toast = new bootstrap.Toast(document.getElementById('syncToast'));
+        toast.show();
+        if (data.success) {
+            // Atualiza a página após 3s para mostrar o novo log
+            setTimeout(() => location.reload(), 3000);
+        }
+    })
+    .catch(() => alert('Erro ao iniciar sincronização'));
+}
+
+function toggleConta(id, atualEstado) {
+    if (!confirm('Tem certeza que deseja ' + (atualEstado ? 'desativar' : 'ativar') + ' esta conta?')) return;
+
+    fetch(`/conta-origem/${id}/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) location.reload();
+        else alert('Erro ao alterar status: ' + data.message);
+    })
+    .catch(() => alert('Erro ao alterar status'));
+}
+
+function toggleContaPrincipal(id, ativaAtual) {
+    var acao = ativaAtual ? 'desativar' : 'ativar';
+    if (!confirm('Tem certeza que deseja ' + acao + ' esta conta principal? ' + (ativaAtual ? 'A sincronização automática e manual das contas de origem serão interrompidas.' : ''))) return;
+    fetch('/conta-principal/' + id + '/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) location.reload();
+        else alert(data.message || 'Erro ao alterar status.');
+    })
+    .catch(function() { alert('Erro de conexão.'); });
+}
+function deletarContaPrincipal(id) {
+    if (!confirm('⚠️ ATENÇÃO! Tem certeza que deseja DELETAR esta conta principal?\n\nEsta ação irá:\n• Deletar TODAS as contas de origem relacionadas\n• Deletar TODOS os logs de sincronização\n• Esta ação NÃO PODE ser desfeita!\n\nDeseja realmente continuar?')) return;
+
+    fetch(`/conta-principal/${id}/deletar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) window.location.href = data.redirect || '/dashboard';
+        else alert('Erro ao deletar conta: ' + data.message);
+    })
+    .catch(() => alert('Erro ao deletar conta'));
+}
+</script>
+{% endblock %}
