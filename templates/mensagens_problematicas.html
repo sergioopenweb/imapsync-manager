@@ -28,16 +28,26 @@
 <div class="alert alert-warning">
     <i class="bi bi-info-circle"></i>
     Mensagens que <strong>falharam na sincronização</strong> ficam presas na origem porque o sistema não as apaga
-    automaticamente (proteção contra perda de dados). Selecione as que não precisa mais e use
-    <strong>Excluir selecionadas na origem</strong> — elas <em>não estão no Gmail</em>.
+    automaticamente (proteção contra perda de dados).
+    <ul class="mb-0 mt-2">
+        <li>Se a mensagem <strong>já está no destino</strong> (falso erro, comum em falhas de conexão/SSL):
+            use <strong>Marcar como resolvido</strong> — ela sai do painel e não é copiada de novo, sem alterar a origem.</li>
+        <li>Se a mensagem <strong>não está no destino</strong> e você não precisa mais dela:
+            use <strong>Excluir selecionadas na origem</strong>.</li>
+    </ul>
 </div>
 
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <h5 class="mb-0">{{ conta.nome }} <small class="text-muted">({{ conta.email }})</small></h5>
-        <button type="button" class="btn btn-sm btn-danger" id="btnExcluirSelecionadas" disabled>
-            <i class="bi bi-trash"></i> Excluir selecionadas na origem
-        </button>
+        <div class="btn-group">
+            <button type="button" class="btn btn-sm btn-success" id="btnMarcarResolvidas" disabled>
+                <i class="bi bi-check2-circle"></i> Marcar como resolvido (já está no destino)
+            </button>
+            <button type="button" class="btn btn-sm btn-danger" id="btnExcluirSelecionadas" disabled>
+                <i class="bi bi-trash"></i> Excluir selecionadas na origem
+            </button>
+        </div>
     </div>
     <div class="card-body">
         {% if log_id %}
@@ -136,8 +146,10 @@
 
     function atualizarBotoes() {
         const n = uidsSelecionados().length;
-        const btn = document.getElementById('btnExcluirSelecionadas');
-        if (btn) btn.disabled = n === 0;
+        const btnExcluir = document.getElementById('btnExcluirSelecionadas');
+        const btnResolver = document.getElementById('btnMarcarResolvidas');
+        if (btnExcluir) btnExcluir.disabled = n === 0;
+        if (btnResolver) btnResolver.disabled = n === 0;
     }
 
     document.getElementById('checkAll')?.addEventListener('change', function () {
@@ -145,6 +157,34 @@
         atualizarBotoes();
     });
     document.querySelectorAll('.chk-uid').forEach(c => c.addEventListener('change', atualizarBotoes));
+
+    document.getElementById('btnMarcarResolvidas')?.addEventListener('click', function () {
+        const uids = uidsSelecionados();
+        if (!uids.length) return;
+        if (!confirm(
+            'Marcar ' + uids.length + ' mensagem(ns) como resolvida(s)?\n\n'
+            + 'Use isto quando já confirmou que elas estão no destino.\n'
+            + 'Elas saem deste painel e NÃO serão copiadas novamente. A origem não é alterada.'
+        )) return;
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processando…';
+        fetch(`/conta-origem/${contaId}/mensagens-exclusao/marcar-resolvido`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ uids }),
+        })
+            .then(r => r.json())
+            .then(data => {
+                toast(data.message || 'OK', data.ok ? 'success' : 'danger');
+                setTimeout(() => location.reload(), 1200);
+            })
+            .catch(() => {
+                toast('Erro de rede', 'danger');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check2-circle"></i> Marcar como resolvido (já está no destino)';
+            });
+    });
 
     document.getElementById('btnExcluirSelecionadas')?.addEventListener('click', function () {
         const uids = uidsSelecionados();

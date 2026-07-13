@@ -1345,6 +1345,52 @@ class SyncErrorManager:
             return 0
 
     @staticmethod
+    def marcar_resolvido(conta_origem_id, uids):
+        """Marca mensagens como resolvidas por já estarem no destino.
+
+        Registra o Message-ID no histórico (evita recópia/duplicação em
+        sincronizações futuras) e remove o registro do painel de problemáticas.
+        Não altera a caixa de origem. Retorna (resolvidas, sem_message_id).
+        """
+        uids = [str(u).strip() for u in (uids or []) if str(u).strip()]
+        if not uids:
+            return 0, 0
+        try:
+            registros = SyncErrorManager.buscar_erros_por_uids(conta_origem_id, uids)
+            historico = [
+                {
+                    'message_id': r.get('message_id'),
+                    'assunto': r.get('assunto'),
+                    'remetente': r.get('remetente'),
+                }
+                for r in registros
+                if r.get('message_id')
+            ]
+            if historico:
+                EmailHistoryManager.adicionar_message_ids(conta_origem_id, historico)
+
+            encontrados = {str(r.get('uid_origem')) for r in registros}
+            sem_message_id = sum(1 for r in registros if not r.get('message_id'))
+            sem_message_id += sum(1 for u in uids if u not in encontrados)
+
+            placeholders = ','.join(['%s'] * len(uids))
+            with DatabaseManager.get_cursor() as cursor:
+                cursor.execute(f'''
+                    DELETE FROM sync_erros_mensagem
+                    WHERE conta_origem_id = %s AND uid_origem IN ({placeholders})
+                ''', [conta_origem_id] + uids)
+                resolvidas = cursor.rowcount or 0
+                cursor.execute(f'''
+                    DELETE FROM mensagens_marcadas_exclusao
+                    WHERE conta_origem_id = %s AND status = 'pendente'
+                    AND uid_origem IN ({placeholders})
+                ''', [conta_origem_id] + uids)
+            return (resolvidas if resolvidas else len(uids)), sem_message_id
+        except Exception as e:
+            logger.error(f"Erro ao marcar mensagens como resolvidas: {e}")
+            return 0, 0
+
+    @staticmethod
     def buscar_erros_por_uids(conta_origem_id, uids):
         uids = [str(u).strip() for u in (uids or []) if str(u).strip()]
         if not uids:

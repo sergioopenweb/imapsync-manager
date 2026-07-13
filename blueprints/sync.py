@@ -460,6 +460,36 @@ def register_routes(app):
             logger.error(f"Erro ao marcar exclusão: {e}")
             return jsonify({'ok': False, 'message': str(e)}), 500
 
+    @app.route('/conta-origem/<int:conta_origem_id>/mensagens-exclusao/marcar-resolvido', methods=['POST'])
+    @login_required
+    def marcar_mensagens_resolvidas(conta_origem_id):
+        """Remove do painel mensagens que já estão no destino (sem tocar na origem)."""
+        try:
+            conta = _validar_conta_origem_usuario(conta_origem_id, session['user_id'])
+            if not conta:
+                return jsonify({'ok': False, 'message': 'Conta não encontrada'}), 404
+
+            data = request.get_json(silent=True) or {}
+            uids = data.get('uids') or request.form.getlist('uids') or []
+            if isinstance(uids, str):
+                uids = [uids]
+            if not uids:
+                return jsonify({'ok': False, 'message': 'Nenhuma mensagem selecionada'}), 400
+
+            SyncErrorManager.criar_tabelas_se_nao_existem()
+            resolvidas, sem_mid = SyncErrorManager.marcar_resolvido(conta_origem_id, uids)
+            msg = f'{resolvidas} mensagem(ns) marcada(s) como resolvida(s) e removida(s) do painel.'
+            if sem_mid:
+                msg += (f' Atenção: {sem_mid} sem Message-ID identificável podem ser copiada(s) '
+                        'novamente na próxima sincronização.')
+            if is_ajax():
+                return jsonify({'ok': True, 'message': msg, 'resolvidas': resolvidas})
+            flash(msg, 'success')
+            return redirect(url_for('mensagens_problematicas', conta_origem_id=conta_origem_id))
+        except Exception as e:
+            logger.error(f"Erro ao marcar mensagens como resolvidas: {e}")
+            return jsonify({'ok': False, 'message': str(e)}), 500
+
     @app.route('/conta-origem/<int:conta_origem_id>/mensagens-exclusao/desmarcar', methods=['POST'])
     @login_required
     def desmarcar_mensagens_exclusao(conta_origem_id):
