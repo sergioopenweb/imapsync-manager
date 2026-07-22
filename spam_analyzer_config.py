@@ -29,6 +29,14 @@ _REMETENTES_SISTEMA = frozenset({
     'mailer-daemon', 'mail-daemon', 'postmaster', 'noreply', 'no-reply',
 })
 
+# Sufixos legítimos após "servidor" (evitar FP na R6: servidorbackup.empresa.com)
+_SUFIXOS_SERVIDOR_OPERACIONAIS = frozenset({
+    'mysql', 'proxy', 'backup', 'email', 'smtp', 'imap', 'pop', 'pop3',
+    'webmail', 'painel', 'admin', 'cloud', 'local', 'teste', 'prod',
+    'homolog', 'primary', 'secundario', 'mail', 'ftp', 'www', 'api',
+    'app', 'vpn', 'gateway',
+})
+
 # Ações disponíveis
 ACAO_MARCAR_SPAM = 'mark_spam'      # Enviar para pasta Spam no destino
 ACAO_PULAR_INBOX = 'skip_inbox'     # Arquivar (não colocar na caixa de entrada)
@@ -1245,6 +1253,10 @@ def dominio_numerico_suspeito(from_raw: str) -> bool:
       5. Nome de usuário termina em sufixo aleatório com dígito logo após traço
          ex: pauloroberto-ijs2@, pedagio-aarao-4j@, amadeu-atendimento-x0v@,
              detran_placido-f4@, mrdigital-30ka@, noreply-spe-subq@
+      6. Subdomínio descartável "servidor" + token aleatório (≥5 chars)
+         ex: servidorrp89it.capperella.com, servidorrvigln.alysonjon.com,
+             servidor6tg6bo.5thandmainfurniture.com
+         (R2 exige 2+ dígitos seguidos; esta campanha usa dígitos isolados ou só letras)
 
     Emails na whitelist (remetentes_permitidos) NUNCA chegam aqui — o chamador
     deve filtrar antes de invocar esta função.
@@ -1286,6 +1298,19 @@ def dominio_numerico_suspeito(from_raw: str) -> bool:
     for sub in subdomains:
         if re.search(r'\d{2,}', sub):
             logger.debug(f"dominio_numerico_suspeito R2: subdomínio '{sub}' com dígitos ({email})")
+            return True
+
+    # ── Regra 6: subdomínio "servidor" + token aleatório (infra descartável) ─
+    # Campanha típica: diretoriafinanceira@servidorXXXX.dominio-descartavel.com
+    for sub in subdomains:
+        if not re.fullmatch(r'servidor[a-z0-9]{5,}', sub):
+            continue
+        suffix = sub[8:]  # após "servidor"
+        if suffix in _SUFIXOS_SERVIDOR_OPERACIONAIS:
+            continue
+        # token com dígito (mesmo isolado) OU ≥6 letras (ex.: rvigln, fyfypb)
+        if re.search(r'\d', suffix) or (len(suffix) >= 6 and suffix.isalpha()):
+            logger.debug(f"dominio_numerico_suspeito R6: subdomínio descartável '{sub}' ({email})")
             return True
 
     # ── Regra 3: Username com 5+ dígitos consecutivos ────────────────────────

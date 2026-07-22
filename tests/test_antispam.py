@@ -31,6 +31,27 @@ class TestDominioNumerico:
     def test_detecta_usuario_longo_numerico(self):
         assert dominio_numerico_suspeito('Reclame Aqui <contato95290@vendasloja5.simplesnacional052026.com>')
 
+    def test_detecta_servidor_token_com_digitos_isolados(self):
+        """R2 exige \\d{2,}; R6 pega servidor + token com dígitos isolados."""
+        assert dominio_numerico_suspeito(
+            'Janaina - Financeiro CANOAS <diretoriafinanceira@servidor6tg6bo.5thandmainfurniture.com>'
+        )
+        assert dominio_numerico_suspeito(
+            'Janaina - Financeiro PORTO ALEGRE\r\n <diretoriafinanceira@servidorly0l9o.capperella.com>'
+        )
+
+    def test_detecta_servidor_token_so_letras(self):
+        assert dominio_numerico_suspeito(
+            'Janaina - Financeiro PORTO ALEGRE <diretoriafinanceira@servidorrvigln.alysonjon.com>'
+        )
+        assert dominio_numerico_suspeito(
+            'Janaina - Financeiro <diretoriafinanceira@servidorfyfypb.americancraftedfurniture.com>'
+        )
+
+    def test_ignora_servidor_operacional(self):
+        assert not dominio_numerico_suspeito('ops <alerta@servidorbackup.empresa.com.br>')
+        assert not dominio_numerico_suspeito('ops <alerta@servidor.empresa.com.br>')
+
 
 class TestReplyToMismatch:
     def test_mesmo_dominio_base_ignora(self):
